@@ -32,10 +32,10 @@ import java.util.UUID;
 public class ProductService {
 
     @Value("${aws.bucket.name}")
-    private final String bucketName;
+    private String bucketName;
+    private IProductMapper productMapper;
 
     private final IProductRepository repository;
-    private final IProductMapper productMapper;
     private final S3Client s3Client;
 
     @Transactional(rollbackFor = Exception.class)

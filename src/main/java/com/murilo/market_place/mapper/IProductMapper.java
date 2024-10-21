@@ -6,7 +6,7 @@ import com.murilo.market_place.dtos.product.ProductResponseDTO;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 
-@Mapper
+@Mapper(componentModel = "spring")
 public interface IProductMapper {
 
     @Mapping(target = "thumb", ignore = true)
