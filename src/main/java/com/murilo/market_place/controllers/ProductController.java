@@ -1,5 +1,6 @@
 package com.murilo.market_place.controllers;
 
+import com.murilo.market_place.controllers.documentation.IProductDocController;
 import com.murilo.market_place.dtos.product.ProductRequestDTO;
 import com.murilo.market_place.dtos.product.ProductResponseDTO;
 import com.murilo.market_place.services.ProductService;
@@ -16,7 +17,7 @@ import java.util.UUID;
 @RestController
 @RequestMapping("/api/v1/products")
 @RequiredArgsConstructor
-public class ProductController {
+public class ProductController implements IProductDocController {
 
     private final ProductService service;
 
