@@ -9,7 +9,7 @@ on:
       - '.github/workflows/mp-workflow.yaml'
 
   push:
-    branches: [ main ]
+    branches: [ main, develop ]
     paths:
       - 'src/**'
       - 'docker-compose.yml'
