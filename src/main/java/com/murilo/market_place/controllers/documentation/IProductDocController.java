@@ -7,6 +7,7 @@ import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.ExampleObject;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import org.springframework.data.domain.Page;
 import org.springframework.http.ResponseEntity;
 
 import java.util.List;
@@ -110,7 +111,7 @@ public interface IProductDocController {
                     )
             }
     )
-    ResponseEntity<List<ProductResponseDTO>> findAll(int page,int size);
+    ResponseEntity<Page<ProductResponseDTO>> findAll(int page, int size);
 
     @Operation(
             description = "Remove an product",

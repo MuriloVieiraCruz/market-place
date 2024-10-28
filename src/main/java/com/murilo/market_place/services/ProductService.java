@@ -6,12 +6,13 @@ import com.murilo.market_place.dtos.product.ProductResponseDTO;
 import com.murilo.market_place.exception.BucketS3InsertException;
 import com.murilo.market_place.exception.NullInsertValueException;
 import com.murilo.market_place.exception.ObjectNotFoundException;
-import com.murilo.market_place.mapper.IProductMapper;
+import com.murilo.market_place.mapper.ProductMapper;
 import com.murilo.market_place.repositories.IProductRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.dao.EmptyResultDataAccessException;
 import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -23,7 +24,6 @@ import software.amazon.awssdk.services.s3.model.PutObjectRequest;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;
-import java.util.List;
 import java.util.UUID;
 
 
@@ -33,45 +33,46 @@ public class ProductService {
 
     @Value("${aws.bucket.name}")
     private String bucketName;
-    private IProductMapper productMapper;
 
     private final IProductRepository repository;
     private final S3Client s3Client;
 
     @Transactional(rollbackFor = Exception.class)
     public ProductResponseDTO createProduct(ProductRequestDTO productRequestDTO) {
-        Product product = productMapper.toProduct(productRequestDTO);
+        Product product = ProductMapper.toProduct(productRequestDTO);
         product.setThumb(uploadImg(productRequestDTO.thumb()));
 
-        return productMapper.toResponse(repository.save(product));
+        return ProductMapper.toResponse(repository.save(product));
     }
 
     @Transactional(rollbackFor = Exception.class)
     public ProductResponseDTO updateProduct(UUID productId, ProductRequestDTO productRequestDTO) {
         existsProduct(productId);
-        Product product = productMapper.toProduct(productRequestDTO);
+        Product product = ProductMapper.toProduct(productRequestDTO);
         product.setId(productId);
-        return productMapper.toResponse(repository.save(product));
+        return ProductMapper.toResponse(repository.save(product));
     }
 
     @Transactional(readOnly = true)
     public ProductResponseDTO findById(UUID productId) {
-        return productMapper.toResponse(findProduct(productId));
+        return ProductMapper.toResponse(findProduct(productId));
     }
 
     @Transactional(readOnly = true)
-    public List<ProductResponseDTO> findAllProducts(int page, int size) {
-        Pageable pageable = PageRequest.of(page, size);
+    public Page<ProductResponseDTO> findAllProducts(Pageable pageable) {
         Page<Product> productPage = repository.findAll(pageable);
-        return productPage.stream()
-                .map(productMapper::toResponse)
-                .toList();
+        return new PageImpl<>(productPage.stream()
+                .map(ProductMapper::toResponse).toList());
     }
 
     @Transactional(rollbackFor = Exception.class)
     public void deleteProduct(UUID productId) {
         if (productId != null) {
-            repository.deleteById(productId);
+            try {
+                repository.deleteById(productId);
+            } catch (EmptyResultDataAccessException e) {
+                throw new ObjectNotFoundException(Product.class);
+            }
         } else {
             throw new NullInsertValueException("ID is required for product removal");
         }

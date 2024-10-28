@@ -23,6 +23,8 @@ import java.util.Map;
 @RestControllerAdvice
 public class GlobalExceptionHandler {
 
+    private static final String ERRORS_HEAD = "errors";
+
     @ResponseStatus(HttpStatus.BAD_REQUEST)
     @ExceptionHandler(HttpMessageNotReadableException.class)
     public Map<String, Map<String, Object>> handle(){
@@ -88,11 +90,11 @@ public class GlobalExceptionHandler {
         var errors = mane.getFieldErrors();
         Map<String, Map<String, Object>> body = new HashMap<>();
         Map<String, Object> details = new HashMap<>();
-        errors.forEach((error) -> {
+        errors.forEach(error -> {
             details.put("code", ApiError.INVALID_FIELD.getCode());
             details.put("message", error.getDefaultMessage());
         });
-        body.put("errors", details);
+        body.put(ERRORS_HEAD, details);
         return body;
     }
 
@@ -103,11 +105,9 @@ public class GlobalExceptionHandler {
         Map<String, Map<String, Object>> body = new HashMap<>();
         Map<String, Object> description = new HashMap<>();
 
-        cve.getConstraintViolations().forEach((error) -> {
-            description.put("error", error.getMessage());
-        });
+        cve.getConstraintViolations().forEach(error -> description.put("error", error.getMessage()));
 
-        body.put("errors", description);
+        body.put(ERRORS_HEAD, description);
         return body;
     }
 
@@ -118,7 +118,7 @@ public class GlobalExceptionHandler {
         description.put("message", errorMessage);
         description.put("code", apiError.getCode());
 
-        body.put("errors", description);
+        body.put(ERRORS_HEAD, description);
 
         return body;
     }

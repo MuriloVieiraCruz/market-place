@@ -6,12 +6,13 @@ import com.murilo.market_place.dtos.product.ProductResponseDTO;
 import com.murilo.market_place.services.ProductService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.List;
 import java.util.UUID;
 
 @RestController
@@ -28,10 +29,10 @@ public class ProductController implements IProductDocController {
         return ResponseEntity.status(HttpStatus.CREATED).body(service.createProduct(productRequestDTO));
     }
 
-    @PutMapping("/update/{productId}")
+    @PutMapping(value = "/update/{productId}", consumes = { MediaType.MULTIPART_FORM_DATA_VALUE })
     public ResponseEntity<ProductResponseDTO> update(
             @PathVariable("productId") UUID productId,
-            ProductRequestDTO productRequestDTO
+            @ModelAttribute @Valid ProductRequestDTO productRequestDTO
     ) {
         return ResponseEntity.status(HttpStatus.OK).body(service.updateProduct(productId, productRequestDTO));
     }
@@ -44,14 +45,14 @@ public class ProductController implements IProductDocController {
     }
 
     @GetMapping("/search")
-    public ResponseEntity<List<ProductResponseDTO>> findAll(
+    public ResponseEntity<Page<ProductResponseDTO>> findAll(
             @RequestParam(name = "page", defaultValue = "0") int page,
-            @RequestParam(name = "page", defaultValue = "20") int size
+            @RequestParam(name = "size", defaultValue = "20") int size
     ) {
-        return ResponseEntity.status(HttpStatus.OK).body(service.findAllProducts(page, size));
+        return ResponseEntity.status(HttpStatus.OK).body(service.findAllProducts(PageRequest.of(page, size)));
     }
 
-    @DeleteMapping("delete")
+    @DeleteMapping("/delete/{productId}")
     public ResponseEntity<Void> delete(
             @PathVariable("productId") UUID productId
     ) {

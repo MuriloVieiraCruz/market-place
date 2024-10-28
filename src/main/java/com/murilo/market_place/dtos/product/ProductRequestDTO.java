@@ -6,7 +6,8 @@ import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.Serializable;
-import java.util.Date;
+import java.math.BigDecimal;
+import java.time.LocalDate;
 
 public record ProductRequestDTO (
 
@@ -20,7 +21,7 @@ public record ProductRequestDTO (
         String album,
 
         @NotNull(message = "Price is required")
-        Double price,
+        BigDecimal price,
 
         @NotBlank(message = "Store is required")
         String store,
@@ -29,6 +30,6 @@ public record ProductRequestDTO (
         MultipartFile thumb,
 
         @DateTimeFormat(iso = DateTimeFormat.ISO.DATE)
-        Date date
+        LocalDate date
 ) implements Serializable {
 }
