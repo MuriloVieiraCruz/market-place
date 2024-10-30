@@ -3,6 +3,7 @@ package com.murilo.market_place.services;
 import com.murilo.market_place.domains.Product;
 import com.murilo.market_place.dtos.product.ProductRequestDTO;
 import com.murilo.market_place.dtos.product.ProductResponseDTO;
+import com.murilo.market_place.dtos.product.ProductUpdateRequestDTO;
 import com.murilo.market_place.exception.BucketS3InsertException;
 import com.murilo.market_place.exception.NullInsertValueException;
 import com.murilo.market_place.exception.ObjectNotFoundException;
@@ -53,6 +54,7 @@ class ProductServiceTest {
     private S3Client s3Client;
 
     private ProductRequestDTO productRequestDTO;
+    private ProductUpdateRequestDTO productUpdateRequestDTO;
     private Product product;
     private UUID existingId;
 
@@ -63,6 +65,7 @@ class ProductServiceTest {
         ReflectionTestUtils.setField(productService, "bucketName", BUCKET_NAME);
         product = ProductFactory.getProductInstance();
         productRequestDTO = ProductFactory.getProductRequestInstance();
+        productUpdateRequestDTO = ProductFactory.getProductUpdateRequestInstance();
         existingId = UUID.randomUUID();
     }
 
@@ -113,7 +116,7 @@ class ProductServiceTest {
         when(productRepository.existsById(existingId)).thenReturn(true);
         when(productRepository.save(any(Product.class))).thenReturn(product);
 
-        ProductResponseDTO response = productService.updateProduct(existingId, productRequestDTO);
+        ProductResponseDTO response = productService.updateProduct(productUpdateRequestDTO);
 
         assertThat(response).isNotNull();
         assertEquals("Pink Floyd", response.artist());
@@ -128,9 +131,9 @@ class ProductServiceTest {
 
     @Test
     void testCaseUpdateNotFoundId() {
-        when(productRepository.existsById(existingId)).thenReturn(false);
+        when(productRepository.findById(existingId)).thenReturn(Optional.ofNullable(product));
 
-        assertThrows(ObjectNotFoundException.class, () -> productService.updateProduct(existingId, productRequestDTO));
+        assertThrows(ObjectNotFoundException.class, () -> productService.updateProduct(productUpdateRequestDTO));
         verify(productRepository, never()).save(any(Product.class));
     }
 

@@ -71,6 +71,7 @@ class ProductControllerTest {
 
     private ProductRequestDTO initRequestDTO() {
         return new ProductRequestDTO(
+                UUID.randomUUID(),
                 "Pink Floyd",
                 1973,
                 "Dask Side of The Moon",
@@ -124,7 +125,7 @@ class ProductControllerTest {
 
     @Test
     void testSuccessUpdate() throws Exception {
-        when(productService.updateProduct(product.getId(), productRequestDTO))
+        when(productService.updateProduct(productRequestDTO))
                 .thenReturn(productResponseDTO);
 
         MockMultipartHttpServletRequestBuilder multipart = (MockMultipartHttpServletRequestBuilder) multipart(baseUrl + "/update/" + product.getId()).with(request -> {
@@ -146,7 +147,7 @@ class ProductControllerTest {
 
     @Test
     void testBadRequestUpdate() throws Exception {
-        when(productService.updateProduct(product.getId(), productRequestDTO))
+        when(productService.updateProduct(productRequestDTO))
                 .thenThrow(new ObjectNotFoundException(Product.class));
 
         MockMultipartHttpServletRequestBuilder multipart = (MockMultipartHttpServletRequestBuilder) multipart(baseUrl + "/update/").with(request -> {
