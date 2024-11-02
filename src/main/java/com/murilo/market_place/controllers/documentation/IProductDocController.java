@@ -2,6 +2,7 @@ package com.murilo.market_place.controllers.documentation;
 
 import com.murilo.market_place.dtos.product.ProductRequestDTO;
 import com.murilo.market_place.dtos.product.ProductResponseDTO;
+import com.murilo.market_place.dtos.product.ProductUpdateRequestDTO;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.ExampleObject;
@@ -46,7 +47,7 @@ public interface IProductDocController {
 
     @Operation(
             description = "Update product",
-            summary = "Responsible for update an product",
+            summary = "Responsible for update an product, here will check which fields have changed",
             responses = {
                     @ApiResponse(description = "Product updated", responseCode = "201"),
                     @ApiResponse(
@@ -71,7 +72,7 @@ public interface IProductDocController {
                     )
             }
     )
-    ResponseEntity<ProductResponseDTO> update(UUID productId, ProductRequestDTO productRequestDTO);
+    ResponseEntity<ProductResponseDTO> update(ProductUpdateRequestDTO productRequestDTO);
 
     @Operation(
             description = "Find product by ID",

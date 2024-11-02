@@ -3,6 +3,7 @@ package com.murilo.market_place.mapper;
 import com.murilo.market_place.domains.Product;
 import com.murilo.market_place.dtos.product.ProductRequestDTO;
 import com.murilo.market_place.dtos.product.ProductResponseDTO;
+import com.murilo.market_place.dtos.product.ProductUpdateRequestDTO;
 
 public class ProductMapper {
 
@@ -13,7 +14,6 @@ public class ProductMapper {
                 .album(productDTO.album())
                 .price(productDTO.price())
                 .store(productDTO.store())
-                .thumb(productDTO.thumb().getOriginalFilename())
                 .date(productDTO.date())
                 .build();
     }
@@ -28,5 +28,18 @@ public class ProductMapper {
                 product.getStore(),
                 product.getThumb(),
                 product.getDate());
+    }
+
+    public static Product toUpdatedProduct(ProductUpdateRequestDTO productDTO, Product product) {
+        return Product.builder()
+                .id(productDTO.id())
+                .artist(productDTO.artist())
+                .year(productDTO.year())
+                .album(productDTO.album())
+                .price(productDTO.price())
+                .store(productDTO.store())
+                .thumb(product.getThumb())
+                .date(productDTO.date())
+                .build();
     }
 }

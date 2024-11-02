@@ -3,6 +3,7 @@ package com.murilo.market_place.controllers;
 import com.murilo.market_place.controllers.documentation.IProductDocController;
 import com.murilo.market_place.dtos.product.ProductRequestDTO;
 import com.murilo.market_place.dtos.product.ProductResponseDTO;
+import com.murilo.market_place.dtos.product.ProductUpdateRequestDTO;
 import com.murilo.market_place.services.ProductService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -29,12 +30,11 @@ public class ProductController implements IProductDocController {
         return ResponseEntity.status(HttpStatus.CREATED).body(service.createProduct(productRequestDTO));
     }
 
-    @PutMapping(value = "/update/{productId}", consumes = { MediaType.MULTIPART_FORM_DATA_VALUE })
+    @PutMapping(value = "/update", consumes = { MediaType.MULTIPART_FORM_DATA_VALUE })
     public ResponseEntity<ProductResponseDTO> update(
-            @PathVariable("productId") UUID productId,
-            @ModelAttribute @Valid ProductRequestDTO productRequestDTO
+            @ModelAttribute @Valid ProductUpdateRequestDTO productRequestDTO
     ) {
-        return ResponseEntity.status(HttpStatus.OK).body(service.updateProduct(productId, productRequestDTO));
+        return ResponseEntity.status(HttpStatus.OK).body(service.updateProduct(productRequestDTO));
     }
 
     @GetMapping("/{productId}")

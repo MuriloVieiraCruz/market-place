@@ -3,9 +3,10 @@ package com.murilo.market_place.services;
 import com.murilo.market_place.domains.Product;
 import com.murilo.market_place.dtos.product.ProductRequestDTO;
 import com.murilo.market_place.dtos.product.ProductResponseDTO;
+import com.murilo.market_place.dtos.product.ProductUpdateRequestDTO;
 import com.murilo.market_place.exception.BucketS3InsertException;
 import com.murilo.market_place.exception.NullInsertValueException;
-import com.murilo.market_place.exception.ObjectNotFoundException;
+import com.murilo.market_place.exception.EntityNotFoundException;
 import com.murilo.market_place.mapper.ProductMapper;
 import com.murilo.market_place.repositories.IProductRepository;
 import lombok.RequiredArgsConstructor;
@@ -24,6 +25,7 @@ import software.amazon.awssdk.services.s3.model.PutObjectRequest;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;
+import java.util.Objects;
 import java.util.UUID;
 
 
@@ -34,7 +36,7 @@ public class ProductService {
     @Value("${aws.bucket.name}")
     private String bucketName;
 
-    private final IProductRepository repository;
+    private final IProductRepository productRepository;
     private final S3Client s3Client;
 
     @Transactional(rollbackFor = Exception.class)
@@ -42,15 +44,15 @@ public class ProductService {
         Product product = ProductMapper.toProduct(productRequestDTO);
         product.setThumb(uploadImg(productRequestDTO.thumb()));
 
-        return ProductMapper.toResponse(repository.save(product));
+        return ProductMapper.toResponse(productRepository.save(product));
     }
 
     @Transactional(rollbackFor = Exception.class)
-    public ProductResponseDTO updateProduct(UUID productId, ProductRequestDTO productRequestDTO) {
-        existsProduct(productId);
-        Product product = ProductMapper.toProduct(productRequestDTO);
-        product.setId(productId);
-        return ProductMapper.toResponse(repository.save(product));
+    public ProductResponseDTO updateProduct(ProductUpdateRequestDTO productRequestDTO) {
+        Product product = findProduct(productRequestDTO.id());
+
+        updateProduct(productRequestDTO, product);
+        return ProductMapper.toResponse(productRepository.save(product));
     }
 
     @Transactional(readOnly = true)
@@ -60,7 +62,7 @@ public class ProductService {
 
     @Transactional(readOnly = true)
     public Page<ProductResponseDTO> findAllProducts(Pageable pageable) {
-        Page<Product> productPage = repository.findAll(pageable);
+        Page<Product> productPage = productRepository.findAll(pageable);
         return new PageImpl<>(productPage.stream()
                 .map(ProductMapper::toResponse).toList());
     }
@@ -69,9 +71,9 @@ public class ProductService {
     public void deleteProduct(UUID productId) {
         if (productId != null) {
             try {
-                repository.deleteById(productId);
+                productRepository.deleteById(productId);
             } catch (EmptyResultDataAccessException e) {
-                throw new ObjectNotFoundException(Product.class);
+                throw new EntityNotFoundException(Product.class);
             }
         } else {
             throw new NullInsertValueException("ID is required for product removal");
@@ -100,14 +102,17 @@ public class ProductService {
         }
     }
 
-    private Product findProduct(UUID productId) {
-        return repository.findById(productId).orElseThrow(() -> new ObjectNotFoundException(Product.class));
+    private void updateProduct(ProductUpdateRequestDTO dto, Product product) {
+        Product productUpdated = ProductMapper.toUpdatedProduct(dto, product);
+        //TODO implement the deletion of the old image in S3 in the future, if a new image is inserted
+        dto.thumb().ifPresent(file -> productUpdated.setThumb(uploadImg(file)));
     }
 
-    private void existsProduct(UUID productId) {
-        boolean exist = repository.existsById(productId);
-        if (!exist) {
-            throw new ObjectNotFoundException(Product.class);
+    private Product findProduct(UUID productId) {
+        if (Objects.isNull(productId)) {
+            throw new NullInsertValueException("ID is required for product update");
         }
+
+        return productRepository.findById(productId).orElseThrow(() -> new EntityNotFoundException(Product.class));
     }
 }
