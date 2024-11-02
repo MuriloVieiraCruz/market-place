@@ -104,13 +104,13 @@ public class ProductService {
 
     private void updateProduct(ProductUpdateRequestDTO dto, Product product) {
         Product productUpdated = ProductMapper.toUpdatedProduct(dto, product);
-        //TODO implement the deletion of the old image in S3 in the future, if a new image is inserted
+        //TODO implement the deletion of the old image on S3 in the future, if a new image is inserted
         dto.thumb().ifPresent(file -> productUpdated.setThumb(uploadImg(file)));
     }
 
     private Product findProduct(UUID productId) {
         if (Objects.isNull(productId)) {
-            throw new NullInsertValueException("ID is required for product update");
+            throw new NullInsertValueException("ID is required for product search");
         }
 
         return productRepository.findById(productId).orElseThrow(() -> new EntityNotFoundException(Product.class));
