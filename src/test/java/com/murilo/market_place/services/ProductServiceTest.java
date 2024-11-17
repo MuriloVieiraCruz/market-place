@@ -3,15 +3,18 @@ package com.murilo.market_place.services;
 import com.murilo.market_place.domains.Product;
 import com.murilo.market_place.dtos.product.ProductRequestDTO;
 import com.murilo.market_place.dtos.product.ProductResponseDTO;
-import com.murilo.market_place.dtos.product.ProductUpdateRequestDTO;
 import com.murilo.market_place.exception.BucketS3InsertException;
-import com.murilo.market_place.exception.NullInsertValueException;
-import com.murilo.market_place.exception.ObjectNotFoundException;
+import com.murilo.market_place.exception.EntityNotFoundException;
+import com.murilo.market_place.exception.NullValueInsertionException;
 import com.murilo.market_place.factory.ProductFactory;
+import com.murilo.market_place.mapper.ProductMapper;
 import com.murilo.market_place.repositories.IProductRepository;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.ArgumentCaptor;
+import org.mockito.Captor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
@@ -35,9 +38,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 
@@ -53,146 +54,216 @@ class ProductServiceTest {
     @Mock
     private S3Client s3Client;
 
+    @Captor
+    private ArgumentCaptor<Product> productCaptor;
+
+    @Captor
+    private ArgumentCaptor<UUID> idCaptor;
+
     private ProductRequestDTO productRequestDTO;
-    private ProductUpdateRequestDTO productUpdateRequestDTO;
     private Product product;
-    private UUID existingId;
 
     private static final String BUCKET_NAME = "test-bucket";
 
     @BeforeEach
-    public void setup() {
+    void setup() {
         ReflectionTestUtils.setField(productService, "bucketName", BUCKET_NAME);
         product = ProductFactory.getProductInstance();
         productRequestDTO = ProductFactory.getProductRequestInstance();
-        productUpdateRequestDTO = ProductFactory.getProductUpdateRequestInstance();
-        existingId = UUID.randomUUID();
     }
 
-    @Test
-    void testCaseCreateSuccess() {
-        doAnswer(invocation -> null)
-                .when(s3Client)
-                .putObject(any(PutObjectRequest.class), any(RequestBody.class));
+    @Nested
+    class create {
 
-        S3Utilities s3UtilitiesMock = mock(S3Utilities.class);
-        when(s3Client.utilities()).thenReturn(s3UtilitiesMock);
+        @Test
+        void testCaseSuccessCreate() {
+            doAnswer(invocation -> null)
+                    .when(s3Client)
+                    .putObject(any(PutObjectRequest.class), any(RequestBody.class));
 
-        when(s3UtilitiesMock.getUrl(any(GetUrlRequest.class)))
-                .thenAnswer(invocation -> new URI("https://s3.amazonaws.com/" + BUCKET_NAME + "/darkSide.jpg").toURL());
-        when(productRepository.save(any(Product.class))).thenReturn(product);
+            S3Utilities s3UtilitiesMock = mock(S3Utilities.class);
+            when(s3Client.utilities()).thenReturn(s3UtilitiesMock);
 
-        ProductResponseDTO response = productService.createProduct(productRequestDTO);
+            when(s3UtilitiesMock.getUrl(any(GetUrlRequest.class)))
+                    .thenAnswer(invocation -> new URI("https://s3.amazonaws.com/" + BUCKET_NAME + "/darkSide.jpg").toURL());
+            when(productRepository.save(productCaptor.capture())).thenReturn(product);
 
-        assertThat(response).isNotNull();
-        assertEquals("Pink Floyd", response.artist());
-        assertEquals(1973, response.year());
-        assertEquals("Dask Side of The Moon", response.album());
-        assertEquals(BigDecimal.valueOf(61.90), response.price());
-        assertEquals("Vinil Records", response.store());
-        assertEquals(LocalDate.now(), response.date());
+            ProductResponseDTO response = productService.createProduct(productRequestDTO);
 
-        verify(s3Client).putObject(any(PutObjectRequest.class), any(RequestBody.class));
-        verify(s3Client).utilities();
-        verify(s3UtilitiesMock).getUrl(any(GetUrlRequest.class));
+            assertNotNull(response);
+            assertEquals("Pink Floyd", response.artist());
+            assertEquals(1973, response.year());
+            assertEquals("Dask Side of The Moon", response.album());
+            assertEquals(BigDecimal.valueOf(61.90), response.price());
+            assertEquals("Vinil Records", response.store());
+            assertEquals(LocalDate.now(), response.date());
+            assertEquals(ProductMapper.toProduct(productRequestDTO), productCaptor.getValue());
+
+            verify(s3Client).putObject(any(PutObjectRequest.class), any(RequestBody.class));
+            verify(s3Client).utilities();
+            verify(s3UtilitiesMock).getUrl(any(GetUrlRequest.class));
+            verify(productRepository, atLeastOnce()).save(any());
+            verifyNoMoreInteractions(productRepository);
+        }
+
+        @Test
+        void testCaseProductErrorGenerateImageURLCreate() {
+            doThrow(IOException.class)
+                    .when(s3Client)
+                    .putObject(any(PutObjectRequest.class), any(RequestBody.class));
+
+            assertThrows(BucketS3InsertException.class, () ->
+                productService.createProduct(productRequestDTO));
+
+            verify(s3Client).putObject(any(PutObjectRequest.class), any(RequestBody.class));
+            verify(productRepository, never()).save(any());
+        }
+
     }
 
-    @Test
-    void testCase2CreateProductErrorGenerateImageURL() {
-        doThrow(new IOException("Error uploading file"))
-                .when(s3Client)
-                .putObject(any(PutObjectRequest.class), any(RequestBody.class));
+    @Nested
+    class update {
 
-        assertThrows(BucketS3InsertException.class, () -> {
-            productService.createProduct(productRequestDTO);
-        });
+        @Test
+        void testCaseSuccessUpdate() {
+            when(productRepository.existsById(idCaptor.capture())).thenReturn(true);
+            when(productRepository.save(productCaptor.capture())).thenReturn(product);
 
-        verify(s3Client).putObject(any(PutObjectRequest.class), any(RequestBody.class));
-        verify(productRepository, never()).save(any(Product.class));
+            ProductResponseDTO response = productService.updateProduct(productRequestDTO);
+
+            assertNotNull(response);
+            assertEquals("Pink Floyd", response.artist());
+            assertEquals(1973, response.year());
+            assertEquals("Dask Side of The Moon", response.album());
+            assertEquals(BigDecimal.valueOf(61.90), response.price());
+            assertEquals("Vinil Records", response.store());
+            assertEquals(LocalDate.now(), response.date());
+            assertEquals(productRequestDTO.id(), idCaptor.getValue());
+            //assertEquals();
+
+            verify(productRepository, atLeastOnce()).save(any());
+            verifyNoMoreInteractions(productRepository);
+        }
+
+        @Test
+        void testCaseNotFoundIdUpdate() {
+            when(productRepository.findById(idCaptor.capture())).thenThrow(EntityNotFoundException.class);
+
+            assertThrows(EntityNotFoundException.class, () -> productService.updateProduct(productRequestDTO));
+            assertEquals(productRequestDTO.id(), idCaptor.getValue());
+
+            verify(productRepository, never()).save(any());
+            verifyNoMoreInteractions(productRepository);
+        }
+
+        @Test
+        void testCaseNullIdUpdate() {
+            assertThrows(NullValueInsertionException.class, () -> productService.updateProduct(productRequestDTO));
+            assertEquals(productRequestDTO.id(), idCaptor.getValue());
+
+            verify(productRepository, never()).save(any());
+            verifyNoMoreInteractions(productRepository);
+        }
     }
 
-    @Test
-    void testCaseUpdateSuccess() {
-        when(productRepository.existsById(existingId)).thenReturn(true);
-        when(productRepository.save(any(Product.class))).thenReturn(product);
+    @Nested
+    class findById {
 
-        ProductResponseDTO response = productService.updateProduct(productUpdateRequestDTO);
+        @Test
+        void testCaseSuccessFindById() {
+            when(productRepository.findById(idCaptor.capture())).thenReturn(Optional.of(product));
 
-        assertThat(response).isNotNull();
-        assertEquals("Pink Floyd", response.artist());
-        assertEquals(1973, response.year());
-        assertEquals("Dask Side of The Moon", response.album());
-        assertEquals(BigDecimal.valueOf(61.90), response.price());
-        assertEquals("Vinil Records", response.store());
-        assertEquals(LocalDate.now(), response.date());
+            ProductResponseDTO response = productService.findById(product.getId());
 
-        verify(productRepository, times(1)).save(any(Product.class));
+            assertNotNull(response);
+            assertEquals("Pink Floyd", response.artist());
+            assertEquals(1973, response.year());
+            assertEquals("Dask Side of The Moon", response.album());
+            assertEquals(BigDecimal.valueOf(61.90), response.price());
+            assertEquals("Vinil Records", response.store());
+            assertEquals(LocalDate.now(), response.date());
+            assertEquals(product.getId(), idCaptor.getValue());
+
+            verify(productRepository, atLeastOnce()).findById(any());
+            verifyNoMoreInteractions(productRepository);
+        }
+
+        @Test
+        void testCaseNotFoundFindById() {
+            when(productRepository.findById(idCaptor.capture())).thenThrow(new EntityNotFoundException(Product.class));
+
+            assertThrows(EntityNotFoundException.class, () -> productService.findById(product.getId()));
+            assertEquals(product.getId(), idCaptor.getValue());
+
+            verify(productRepository, atLeastOnce()).findById(any());
+            verifyNoMoreInteractions(productRepository);
+        }
+
+        @Test
+        void testCaseNullIdFindById() {
+            when(productRepository.findById(idCaptor.capture())).thenThrow(NullValueInsertionException.class);
+
+            assertThrows(NullValueInsertionException.class, () -> productService.findById(null));
+            assertEquals(product.getId(), idCaptor.getValue());
+
+            verify(productRepository, never()).findById(any());
+        }
     }
 
-    @Test
-    void testCaseUpdateNotFoundId() {
-        when(productRepository.findById(existingId)).thenReturn(Optional.ofNullable(product));
+    @Nested
+    class findAll {
 
-        assertThrows(ObjectNotFoundException.class, () -> productService.updateProduct(productUpdateRequestDTO));
-        verify(productRepository, never()).save(any(Product.class));
+        @Test
+        void testCaseSuccessFindAll() {
+            when(productRepository.findAll(any(Pageable.class))).thenReturn(new PageImpl<>(List.of(product)));
+
+            Page<ProductResponseDTO> response = productService.findAllProducts(PageRequest.of(0, 1));
+
+            assertNotNull(response);
+            assertEquals("Pink Floyd", response.getContent().getFirst().artist());
+            assertEquals(1973, response.getContent().getFirst().year());
+            assertEquals("Dask Side of The Moon", response.getContent().getFirst().album());
+            assertEquals(BigDecimal.valueOf(61.90), response.getContent().getFirst().price());
+            assertEquals("Vinil Records", response.getContent().getFirst().store());
+            assertEquals(LocalDate.now(), response.getContent().getFirst().date());
+
+            verify(productRepository, atLeastOnce()).findAll(any(Pageable.class));
+            verifyNoMoreInteractions(productRepository);
+        }
     }
 
-    @Test
-    void testCaseFindByIdSuccess() {
-        when(productRepository.findById(existingId)).thenReturn(Optional.ofNullable(product));
+    @Nested
+    class delete {
 
-        ProductResponseDTO response = productService.findById(existingId);
+        @Test
+        void testCaseSuccessDelete() {
+            doNothing().when(productRepository).deleteById(idCaptor.capture());
 
-        assertThat(response).isNotNull();
-        assertEquals("Pink Floyd", response.artist());
-        assertEquals(1973, response.year());
-        assertEquals("Dask Side of The Moon", response.album());
-        assertEquals(BigDecimal.valueOf(61.90), response.price());
-        assertEquals("Vinil Records", response.store());
-        assertEquals(LocalDate.now(), response.date());
-    }
+            productService.deleteProduct(product.getId());
 
-    @Test
-    void testCaseFindByIdNotFound() {
-        var nonExistingId = UUID.randomUUID();
+            assertEquals(product.getId(), idCaptor.getValue());
 
-        when(productRepository.findById(nonExistingId)).thenThrow(new ObjectNotFoundException(Product.class));
-        assertThrows(ObjectNotFoundException.class, () -> productService.findById(nonExistingId));
-    }
+            verify(productRepository, atLeastOnce()).deleteById(any());
+            verifyNoMoreInteractions(productRepository);
+        }
 
-    @Test
-    void findAllProducts() {
-        when(productRepository.findAll(any(Pageable.class))).thenReturn(new PageImpl<>(List.of(product)));
+        @Test
+        void testCaseNotFoundIdDelete() {
+            doThrow(EmptyResultDataAccessException.class).when(productRepository).deleteById(idCaptor.capture());
 
-        Page<ProductResponseDTO> response = productService.findAllProducts(PageRequest.of(0, 1));
+            assertThrows(EntityNotFoundException.class, () -> productService.deleteProduct(product.getId()));
+            assertEquals(product.getId(), idCaptor.getValue());
 
-        assertThat(response).isNotNull();
-        assertEquals("Pink Floyd", response.getContent().getFirst().artist());
-        assertEquals(1973, response.getContent().getFirst().year());
-        assertEquals("Dask Side of The Moon", response.getContent().getFirst().album());
-        assertEquals(BigDecimal.valueOf(61.90), response.getContent().getFirst().price());
-        assertEquals("Vinil Records", response.getContent().getFirst().store());
-        assertEquals(LocalDate.now(), response.getContent().getFirst().date());
-    }
+            verify(productRepository, atLeastOnce()).deleteById(any());
+            verifyNoMoreInteractions(productRepository);
+        }
 
-    @Test
-    void testCaseDeleteProductSuccess() {
-        doNothing().when(productRepository).deleteById(existingId);
+        @Test
+        void testCaseNullIdDelete() {
+            assertThrows(NullValueInsertionException.class, () -> productService.deleteProduct(null));
 
-        productService.deleteProduct(existingId);
-        verify(productRepository, times(1)).deleteById(existingId);
-    }
-
-    @Test
-    void testCaseDeleteProductNotFoundId() {
-        var nonExistingId = UUID.randomUUID();
-
-        doThrow(new EmptyResultDataAccessException(1)).when(productRepository).deleteById(nonExistingId);
-        assertThrows(ObjectNotFoundException.class, () -> productService.deleteProduct(nonExistingId));
-    }
-
-    @Test
-    void testCaseDeleteProductWithNoPassId() {
-        assertThrows(NullInsertValueException.class, () -> productService.deleteProduct(null));
+            verify(productRepository, never()).deleteById(any());
+            verifyNoMoreInteractions(productRepository);
+        }
     }
 }
