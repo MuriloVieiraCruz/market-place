@@ -2,7 +2,6 @@ package com.murilo.market_place.controllers.documentation;
 
 import com.murilo.market_place.dtos.product.ProductRequestDTO;
 import com.murilo.market_place.dtos.product.ProductResponseDTO;
-import com.murilo.market_place.dtos.product.ProductUpdateRequestDTO;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.ExampleObject;
@@ -72,7 +71,7 @@ public interface IProductDocController {
                     )
             }
     )
-    ResponseEntity<ProductResponseDTO> update(ProductUpdateRequestDTO productRequestDTO);
+    ResponseEntity<ProductResponseDTO> update(ProductRequestDTO productRequestDTO);
 
     @Operation(
             description = "Find product by ID",

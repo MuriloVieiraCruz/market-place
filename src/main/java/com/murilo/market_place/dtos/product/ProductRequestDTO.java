@@ -5,13 +5,12 @@ import jakarta.validation.constraints.NotNull;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.web.multipart.MultipartFile;
 
-import java.io.Serializable;
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.util.Optional;
 import java.util.UUID;
 
-public record ProductRequestDTO (
-
+public record ProductRequestDTO(
         UUID id,
 
         @NotBlank(message = "Artist is required")
@@ -29,10 +28,9 @@ public record ProductRequestDTO (
         @NotBlank(message = "Store is required")
         String store,
 
-        @NotNull(message = "Thumb is required")
-        MultipartFile thumb,
+        Optional<MultipartFile> thumb,
 
         @DateTimeFormat(iso = DateTimeFormat.ISO.DATE)
         LocalDate date
-) implements Serializable {
+) {
 }

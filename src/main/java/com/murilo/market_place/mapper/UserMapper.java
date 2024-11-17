@@ -12,6 +12,7 @@ public class UserMapper {
                 .name(userDTO.name())
                 .cpf(userDTO.cpf())
                 .email(userDTO.email())
+                .password(userDTO.password())
                 .status(Status.WAITING_ACTIVATION)
                 .build();
     }

@@ -3,7 +3,6 @@ package com.murilo.market_place.controllers;
 import com.murilo.market_place.controllers.documentation.IProductDocController;
 import com.murilo.market_place.dtos.product.ProductRequestDTO;
 import com.murilo.market_place.dtos.product.ProductResponseDTO;
-import com.murilo.market_place.dtos.product.ProductUpdateRequestDTO;
 import com.murilo.market_place.services.ProductService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -32,7 +31,7 @@ public class ProductController implements IProductDocController {
 
     @PutMapping(value = "/update", consumes = { MediaType.MULTIPART_FORM_DATA_VALUE })
     public ResponseEntity<ProductResponseDTO> update(
-            @ModelAttribute @Valid ProductUpdateRequestDTO productRequestDTO
+            @ModelAttribute @Valid ProductRequestDTO productRequestDTO
     ) {
         return ResponseEntity.status(HttpStatus.OK).body(service.updateProduct(productRequestDTO));
     }

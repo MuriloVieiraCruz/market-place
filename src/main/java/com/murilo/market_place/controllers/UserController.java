@@ -34,7 +34,7 @@ public class UserController implements IUserDocController {
         return ResponseEntity.status(HttpStatus.OK).body(userService.findById(userId));
     }
 
-    @DeleteMapping("/remove/{userId}")
+    @DeleteMapping("/delete/{userId}")
     public ResponseEntity<Void> delete(@PathVariable("userId") UUID userId) {
         userService.deleteUser(userId);
         return ResponseEntity.status(HttpStatus.OK).build();

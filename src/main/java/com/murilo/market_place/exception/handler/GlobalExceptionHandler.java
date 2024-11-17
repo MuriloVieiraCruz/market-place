@@ -1,10 +1,13 @@
 package com.murilo.market_place.exception.handler;
 
 import com.fasterxml.jackson.databind.exc.InvalidDefinitionException;
+import com.murilo.market_place.exception.EntityNotFoundException;
+import com.murilo.market_place.exception.NullValueInsertionException;
 import com.murilo.market_place.exception.enums.ApiError;
 import jakarta.validation.ConstraintViolationException;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.web.HttpRequestMethodNotSupportedException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
@@ -24,6 +27,16 @@ import java.util.Map;
 public class GlobalExceptionHandler {
 
     private static final String ERRORS_HEAD = "errors";
+
+    @ExceptionHandler(NullValueInsertionException.class)
+    public ResponseEntity<String> handleNullInsertValueException(NullValueInsertionException ex) {
+        return ResponseEntity.badRequest().body(ex.getMessage());
+    }
+
+    @ExceptionHandler(EntityNotFoundException.class)
+    public ResponseEntity<String> handleEntityNotFoundException(EntityNotFoundException ex) {
+        return ResponseEntity.badRequest().body(ex.getMessage());
+    }
 
     @ResponseStatus(HttpStatus.BAD_REQUEST)
     @ExceptionHandler(HttpMessageNotReadableException.class)

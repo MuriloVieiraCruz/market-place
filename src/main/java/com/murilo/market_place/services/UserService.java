@@ -5,7 +5,7 @@ import com.murilo.market_place.domains.User;
 import com.murilo.market_place.dtos.user.UserRequestDTO;
 import com.murilo.market_place.dtos.user.UserResponseDTO;
 import com.murilo.market_place.exception.EntityNotFoundException;
-import com.murilo.market_place.exception.NullInsertValueException;
+import com.murilo.market_place.exception.NullValueInsertionException;
 import com.murilo.market_place.mapper.UserMapper;
 import com.murilo.market_place.repositories.IUserRepository;
 import lombok.RequiredArgsConstructor;
@@ -35,18 +35,18 @@ public class UserService {
     @Transactional(rollbackFor = Exception.class)
     public UserResponseDTO updateUser(UserRequestDTO userRequestDTO) {
         if (Objects.isNull(userRequestDTO.id())) {
-            throw new NullInsertValueException("The user ID is required for update");
+            throw new NullValueInsertionException("The user ID is required for update");
         }
 
         existsUser(userRequestDTO.id());
         User user = UserMapper.toUser(userRequestDTO);
+        user.setId(userRequestDTO.id());
 
         //TODO Encrypt user password here
         user.setPassword(userRequestDTO.password());
 
         return UserMapper.toResponse(userRepository.save(user));
     }
-
 
     public UserResponseDTO findById(UUID userId) {
         return UserMapper.toResponse(findUserById(userId));
@@ -61,13 +61,13 @@ public class UserService {
                 throw new EntityNotFoundException(Product.class);
             }
         } else {
-            throw new NullInsertValueException("ID is required for user removal");
+            throw new NullValueInsertionException("ID is required for user removal");
         }
     }
 
     private User findUserById(UUID userId) {
         if (Objects.isNull(userId)) {
-            throw new NullInsertValueException("ID is required for user search");
+            throw new NullValueInsertionException("ID is required for user search");
         }
 
         return userRepository.findById(userId).orElseThrow(() -> new EntityNotFoundException(User.class));
