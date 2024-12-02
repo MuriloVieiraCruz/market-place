@@ -1,10 +1,11 @@
 package com.murilo.market_place.controllers;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.murilo.market_place.domains.User;
 import com.murilo.market_place.dtos.user.UserRequestDTO;
 import com.murilo.market_place.dtos.user.UserResponseDTO;
 import com.murilo.market_place.exception.EntityNotFoundException;
-import com.murilo.market_place.exception.NullValueInsertionException;
+import com.murilo.market_place.exception.NullInsertValueException;
 import com.murilo.market_place.factory.UserFactory;
 import com.murilo.market_place.services.UserService;
 import org.junit.jupiter.api.BeforeEach;
@@ -41,17 +42,19 @@ class UserControllerTest {
 
     private UserRequestDTO userRequestDTO;
     private UserResponseDTO userResponseDTO;
+    private User user;
 
     @BeforeEach
     void setup() {
         userRequestDTO = UserFactory.getUserRequestInstance();
         userResponseDTO = UserFactory.getUserResponseInstance();
+        user = UserFactory.getUserInstance();
     }
 
     @Test
     void testCaseSuccessCreation() throws Exception {
         when(userService.createUser(userRequestDTO))
-                .thenReturn(userResponseDTO);
+                .thenReturn(user);
 
         mockMvc.perform(post(baseUrl + "/create")
                 .contentType(MediaType.APPLICATION_JSON)
@@ -76,7 +79,7 @@ class UserControllerTest {
         userRequestDTO = UserFactory.getUserUpdateInstance();
 
         when(userService.updateUser(userRequestDTO))
-                .thenReturn(userResponseDTO);
+                .thenReturn(user);
 
         mockMvc.perform(put(baseUrl + "/update")
                 .contentType(MediaType.APPLICATION_JSON)
@@ -99,19 +102,19 @@ class UserControllerTest {
     @Test
     void testCaseNullInsertValueExceptionUpdate() throws Exception {
         when(userService.updateUser(userRequestDTO))
-                .thenThrow(new NullValueInsertionException());
+                .thenThrow(new NullInsertValueException());
 
         mockMvc.perform(put(baseUrl + "/update")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(userRequestDTO)))
                 .andExpect(status().isBadRequest())
-                .andExpect(result -> assertInstanceOf(NullValueInsertionException.class, result.getResolvedException()));
+                .andExpect(result -> assertInstanceOf(NullInsertValueException.class, result.getResolvedException()));
     }
 
     @Test
     void testCaseSuccessFindById() throws Exception {
         when(userService.findById(userId))
-                .thenReturn(userResponseDTO);
+                .thenReturn(user);
 
         mockMvc.perform(get(baseUrl + "/" + userId))
                 .andExpect(status().isOk());
@@ -120,7 +123,7 @@ class UserControllerTest {
     @Test
     void testCaseNullIdFindById() throws Exception {
         when(userService.findById(null))
-                .thenThrow(new NullValueInsertionException());
+                .thenThrow(new NullInsertValueException());
 
         mockMvc.perform(get(baseUrl + "/" + null))
                 .andExpect(status().isBadRequest());
@@ -138,7 +141,7 @@ class UserControllerTest {
 
     @Test
     void testCaseDeleteSuccessDelete() throws Exception {
-        doNothing().when(userService).deleteUser(userId);
+        doNothing().when(userService).deleteById(userId);
 
         mockMvc.perform(delete(baseUrl + "/delete/" + userId))
                 .andExpect(status().isOk());
@@ -146,7 +149,7 @@ class UserControllerTest {
 
     @Test
     void testCaseNullIdDelete() throws Exception {
-        doThrow(new NullValueInsertionException()).when(userService).deleteUser(null);
+        doThrow(new NullInsertValueException()).when(userService).deleteById(null);
 
         mockMvc.perform(delete(baseUrl + "/delete/" + null))
                 .andExpect(status().isBadRequest());
@@ -154,7 +157,7 @@ class UserControllerTest {
 
     @Test
     void testCaseNotFoundDelete() throws Exception {
-        doThrow(new EntityNotFoundException()).when(userService).deleteUser(userId);
+        doThrow(new EntityNotFoundException()).when(userService).deleteById(userId);
 
         mockMvc.perform(delete(baseUrl + "/delete/" + userId))
                 .andExpect(status().isBadRequest())

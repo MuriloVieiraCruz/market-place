@@ -10,14 +10,14 @@ import java.util.UUID;
 public class UserFactory {
 
     public static User getUserInstance() {
-        return new User(
-                UUID.randomUUID(),
-                "Test User",
-                "12616899094",
-                "emailteste@gmail.com",
-                "password_123",
-                Status.WAITING_ACTIVATION
-        );
+        return User.builder()
+                .id(UUID.randomUUID())
+                .name("Test User")
+                .cpf("12616899094")
+                .email("emailteste@gmail.com")
+                .password("password_123")
+                .status(Status.WAITING_ACTIVATION)
+                .build();
     }
 
     public static UserRequestDTO getUserRequestInstance() {

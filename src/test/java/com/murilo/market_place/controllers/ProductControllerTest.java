@@ -40,23 +40,21 @@ class ProductControllerTest {
     private Product product;
     private ProductRequestDTO productRequestDTO;
     private ProductResponseDTO productResponseDTO;
-    private ProductRequestDTO productRequestDTO;
 
     @BeforeEach
     void setup() {
         product = ProductFactory.getProductInstance();
         productRequestDTO = ProductFactory.getProductRequestInstance();
         productResponseDTO = ProductFactory.getProductResponseInstance();
-        productRequestDTO = ProductFactory.getProductUpdateRequestInstance();
     }
 
     @Test
     void testCaseSuccessCreation() throws Exception {
         when(productService.createProduct(productRequestDTO))
-                .thenReturn(productResponseDTO);
+                .thenReturn(product);
 
         mockMvc.perform(multipart(baseUrl + "/create")
-                .file("thumb", productRequestDTO.thumb().getBytes())
+                .file("thumb", productRequestDTO.thumb().get().getBytes())
                 .param("artist", productRequestDTO.artist())
                 .param("year", productRequestDTO.year().toString())
                 .param("album", productRequestDTO.album())
@@ -69,7 +67,7 @@ class ProductControllerTest {
     }
 
     @Test
-    void testBadRequestCreation() throws Exception {
+    void testCaseBadRequestCreation() throws Exception {
         when(productService.createProduct(null)).thenThrow(new NullPointerException());
         mockMvc.perform(multipart(baseUrl + "/create")).andExpect(status().isBadRequest());
     }
@@ -83,7 +81,7 @@ class ProductControllerTest {
     @Test
     void testSuccessUpdate() throws Exception {
         when(productService.updateProduct(productRequestDTO))
-                .thenReturn(productResponseDTO);
+                .thenReturn(product);
 
         MockMultipartHttpServletRequestBuilder multipart = (MockMultipartHttpServletRequestBuilder) multipart(baseUrl + "/update/" + product.getId()).with(request -> {
             request.setMethod(String.valueOf(HttpMethod.PUT));
@@ -91,7 +89,7 @@ class ProductControllerTest {
         });
 
         mockMvc.perform(multipart
-                .file("thumb", productRequestDTO.thumb().getBytes())
+                .file("thumb", productRequestDTO.thumb().get().getBytes())
                 .param("artist", productRequestDTO.artist())
                 .param("year", productRequestDTO.year().toString())
                 .param("album", productRequestDTO.album())
@@ -113,7 +111,7 @@ class ProductControllerTest {
         });
 
         mockMvc.perform(multipart
-                .file("thumb", productRequestDTO.thumb().getBytes())
+                .file("thumb", productRequestDTO.thumb().get().getBytes())
                 .param("artist", productRequestDTO.artist())
                 .param("year", productRequestDTO.year().toString())
                 .param("album", productRequestDTO.album())
@@ -126,7 +124,7 @@ class ProductControllerTest {
 
     @Test
     void testSuccessFindById() throws Exception {
-        when(productService.findById(product.getId())).thenReturn(productResponseDTO);
+        when(productService.findById(product.getId())).thenReturn(product);
 
         mockMvc.perform(get(baseUrl + "/" + product.getId()))
                 .andExpect(status().isOk());
@@ -142,7 +140,7 @@ class ProductControllerTest {
 
     @Test
     void testSuccessFindAll() throws Exception {
-        when(productService.findAllProducts(PageRequest.of(0, 1))).thenReturn(new PageImpl<>(List.of(productResponseDTO)));
+        when(productService.findAllProducts(PageRequest.of(0, 1))).thenReturn(new PageImpl<>(List.of(product)));
 
         mockMvc.perform(get(baseUrl + "/search"))
                 .andExpect(status().isOk());
@@ -150,7 +148,7 @@ class ProductControllerTest {
 
     @Test
     void testSuccessDelete() throws Exception {
-        doNothing().when(productService).deleteProduct(product.getId());
+        doNothing().when(productService).deleteById(product.getId());
 
         mockMvc.perform(delete(baseUrl + "/delete/" + product.getId()))
                 .andExpect(status().isOk());
@@ -158,7 +156,7 @@ class ProductControllerTest {
 
     @Test
     void testNotFoundDelete() throws Exception {
-        doThrow(new EntityNotFoundException(Product.class)).when(productService).deleteProduct(product.getId());
+        doThrow(new EntityNotFoundException(Product.class)).when(productService).deleteById(product.getId());
 
         mockMvc.perform(delete(baseUrl + "/delete/" + null))
                 .andExpect(status().isBadRequest());

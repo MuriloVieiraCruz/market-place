@@ -2,9 +2,8 @@ package com.murilo.market_place.services;
 
 import com.murilo.market_place.domains.User;
 import com.murilo.market_place.dtos.user.UserRequestDTO;
-import com.murilo.market_place.dtos.user.UserResponseDTO;
 import com.murilo.market_place.exception.EntityNotFoundException;
-import com.murilo.market_place.exception.NullValueInsertionException;
+import com.murilo.market_place.exception.NullInsertValueException;
 import com.murilo.market_place.factory.UserFactory;
 import com.murilo.market_place.mapper.UserMapper;
 import com.murilo.market_place.repositories.IUserRepository;
@@ -58,10 +57,10 @@ public class UserServiceTest {
             when(userRepository.save(userCaptor.capture()))
                     .thenReturn(user);
 
-            UserResponseDTO response = userService.createUser(userRequestDTO);
+            User response = userService.createUser(userRequestDTO);
 
             assertNotNull(response);
-            assertEquals(UserMapper.toResponse(user), response);
+            assertEquals(UserMapper.toResponse(user), UserMapper.toResponse(response));
             assertEquals(UserMapper.toUser(userRequestDTO), userCaptor.getValue());
 
             verify(userRepository, atLeastOnce()).save(any());
@@ -93,13 +92,13 @@ public class UserServiceTest {
             when(userRepository.save(userCaptor.capture()))
                     .thenReturn(user);
 
-            UserResponseDTO response = userService.updateUser(userRequestDTO);
+            User response = userService.updateUser(userRequestDTO);
 
             var userRequest = UserMapper.toUser(userRequestDTO);
             userRequest.setId(userRequestDTO.id());
 
             assertNotNull(response);
-            assertEquals(UserMapper.toResponse(user), response);
+            assertEquals(UserMapper.toResponse(user), UserMapper.toResponse(response));
             assertEquals(userRequest, userCaptor.getValue());
 
             verify(userRepository, atLeastOnce()).save(any());
@@ -108,7 +107,7 @@ public class UserServiceTest {
 
         @Test
         void testCaseNullIdUpdate() {
-            assertThrows(NullValueInsertionException.class, () -> userService.updateUser(userRequestDTO));
+            assertThrows(NullInsertValueException.class, () -> userService.updateUser(userRequestDTO));
 
             verify(userRepository, never()).existsById(any());
             verify(userRepository, never()).save(any());
@@ -143,10 +142,10 @@ public class UserServiceTest {
         void testCaseSuccessFindById() {
             when(userRepository.findById(idCaptor.capture())).thenReturn(Optional.ofNullable(user));
 
-            UserResponseDTO response = userService.findById(user.getId());
+            User response = userService.findById(user.getId());
 
             assertNotNull(response);
-            assertEquals(UserMapper.toResponse(user), response);
+            assertEquals(UserMapper.toResponse(user), UserMapper.toResponse(response));
             assertEquals(user.getId(), idCaptor.getValue());
 
             verify(userRepository, atLeastOnce()).findById(any());
@@ -165,20 +164,20 @@ public class UserServiceTest {
 
         @Test
         void testCaseNullId() {
-            assertThrows(NullValueInsertionException.class, () -> userService.findById(null));
+            assertThrows(NullInsertValueException.class, () -> userService.findById(null));
 
             verify(userRepository, never()).findById(any());
         }
     }
 
     @Nested
-    class delete {
+    class deleteById {
 
         @Test
         void testCaseSuccessDelete() {
             doNothing().when(userRepository).deleteById(idCaptor.capture());
 
-            userService.deleteUser(user.getId());
+            userService.deleteById(user.getId());
 
             assertEquals(user.getId(), idCaptor.getValue());
 
@@ -190,7 +189,7 @@ public class UserServiceTest {
         void testCaseNotFoundIdDelete() {
             doThrow(EmptyResultDataAccessException.class).when(userRepository).deleteById(idCaptor.capture());
 
-            assertThrows(EntityNotFoundException.class, () -> userService.deleteUser(user.getId()));
+            assertThrows(EntityNotFoundException.class, () -> userService.deleteById(user.getId()));
             assertEquals(user.getId(), idCaptor.getValue());
 
             verify(userRepository, atLeastOnce()).deleteById(any());
@@ -199,7 +198,7 @@ public class UserServiceTest {
 
         @Test
         void testCaseNullId() {
-            assertThrows(NullValueInsertionException.class, () -> userService.deleteUser(null));
+            assertThrows(NullInsertValueException.class, () -> userService.deleteById(null));
 
             verify(userRepository, never()).deleteById(any());
         }

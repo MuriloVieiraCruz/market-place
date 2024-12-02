@@ -2,10 +2,9 @@ package com.murilo.market_place.services;
 
 import com.murilo.market_place.domains.Product;
 import com.murilo.market_place.dtos.product.ProductRequestDTO;
-import com.murilo.market_place.dtos.product.ProductResponseDTO;
 import com.murilo.market_place.exception.BucketS3InsertException;
 import com.murilo.market_place.exception.EntityNotFoundException;
-import com.murilo.market_place.exception.NullValueInsertionException;
+import com.murilo.market_place.exception.NullInsertValueException;
 import com.murilo.market_place.factory.ProductFactory;
 import com.murilo.market_place.mapper.ProductMapper;
 import com.murilo.market_place.repositories.IProductRepository;
@@ -88,15 +87,15 @@ class ProductServiceTest {
                     .thenAnswer(invocation -> new URI("https://s3.amazonaws.com/" + BUCKET_NAME + "/darkSide.jpg").toURL());
             when(productRepository.save(productCaptor.capture())).thenReturn(product);
 
-            ProductResponseDTO response = productService.createProduct(productRequestDTO);
+            Product response = productService.createProduct(productRequestDTO);
 
             assertNotNull(response);
-            assertEquals("Pink Floyd", response.artist());
-            assertEquals(1973, response.year());
-            assertEquals("Dask Side of The Moon", response.album());
-            assertEquals(BigDecimal.valueOf(61.90), response.price());
-            assertEquals("Vinil Records", response.store());
-            assertEquals(LocalDate.now(), response.date());
+            assertEquals("Pink Floyd", response.getArtist());
+            assertEquals(1973, response.getYear());
+            assertEquals("Dask Side of The Moon", response.getAlbum());
+            assertEquals(BigDecimal.valueOf(61.90), response.getPrice());
+            assertEquals("Vinil Records", response.getStore());
+            assertEquals(LocalDate.now(), response.getDate());
             assertEquals(ProductMapper.toProduct(productRequestDTO), productCaptor.getValue());
 
             verify(s3Client).putObject(any(PutObjectRequest.class), any(RequestBody.class));
@@ -129,17 +128,16 @@ class ProductServiceTest {
             when(productRepository.existsById(idCaptor.capture())).thenReturn(true);
             when(productRepository.save(productCaptor.capture())).thenReturn(product);
 
-            ProductResponseDTO response = productService.updateProduct(productRequestDTO);
+            Product response = productService.updateProduct(productRequestDTO);
 
             assertNotNull(response);
-            assertEquals("Pink Floyd", response.artist());
-            assertEquals(1973, response.year());
-            assertEquals("Dask Side of The Moon", response.album());
-            assertEquals(BigDecimal.valueOf(61.90), response.price());
-            assertEquals("Vinil Records", response.store());
-            assertEquals(LocalDate.now(), response.date());
+            assertEquals("Pink Floyd", response.getArtist());
+            assertEquals(1973, response.getYear());
+            assertEquals("Dask Side of The Moon", response.getAlbum());
+            assertEquals(BigDecimal.valueOf(61.90), response.getPrice());
+            assertEquals("Vinil Records", response.getStore());
+            assertEquals(LocalDate.now(), response.getDate());
             assertEquals(productRequestDTO.id(), idCaptor.getValue());
-            //assertEquals();
 
             verify(productRepository, atLeastOnce()).save(any());
             verifyNoMoreInteractions(productRepository);
@@ -158,7 +156,7 @@ class ProductServiceTest {
 
         @Test
         void testCaseNullIdUpdate() {
-            assertThrows(NullValueInsertionException.class, () -> productService.updateProduct(productRequestDTO));
+            assertThrows(NullInsertValueException.class, () -> productService.updateProduct(productRequestDTO));
             assertEquals(productRequestDTO.id(), idCaptor.getValue());
 
             verify(productRepository, never()).save(any());
@@ -173,16 +171,15 @@ class ProductServiceTest {
         void testCaseSuccessFindById() {
             when(productRepository.findById(idCaptor.capture())).thenReturn(Optional.of(product));
 
-            ProductResponseDTO response = productService.findById(product.getId());
+            Product response = productService.findById(product.getId());
 
             assertNotNull(response);
-            assertEquals("Pink Floyd", response.artist());
-            assertEquals(1973, response.year());
-            assertEquals("Dask Side of The Moon", response.album());
-            assertEquals(BigDecimal.valueOf(61.90), response.price());
-            assertEquals("Vinil Records", response.store());
-            assertEquals(LocalDate.now(), response.date());
-            assertEquals(product.getId(), idCaptor.getValue());
+            assertEquals("Pink Floyd", response.getArtist());
+            assertEquals(1973, response.getYear());
+            assertEquals("Dask Side of The Moon", response.getAlbum());
+            assertEquals(BigDecimal.valueOf(61.90), response.getPrice());
+            assertEquals("Vinil Records", response.getStore());
+            assertEquals(LocalDate.now(), response.getDate());
 
             verify(productRepository, atLeastOnce()).findById(any());
             verifyNoMoreInteractions(productRepository);
@@ -201,9 +198,9 @@ class ProductServiceTest {
 
         @Test
         void testCaseNullIdFindById() {
-            when(productRepository.findById(idCaptor.capture())).thenThrow(NullValueInsertionException.class);
+            when(productRepository.findById(idCaptor.capture())).thenThrow(NullInsertValueException.class);
 
-            assertThrows(NullValueInsertionException.class, () -> productService.findById(null));
+            assertThrows(NullInsertValueException.class, () -> productService.findById(null));
             assertEquals(product.getId(), idCaptor.getValue());
 
             verify(productRepository, never()).findById(any());
@@ -217,15 +214,15 @@ class ProductServiceTest {
         void testCaseSuccessFindAll() {
             when(productRepository.findAll(any(Pageable.class))).thenReturn(new PageImpl<>(List.of(product)));
 
-            Page<ProductResponseDTO> response = productService.findAllProducts(PageRequest.of(0, 1));
+            Page<Product> response = productService.findAllProducts(PageRequest.of(0, 1));
 
             assertNotNull(response);
-            assertEquals("Pink Floyd", response.getContent().getFirst().artist());
-            assertEquals(1973, response.getContent().getFirst().year());
-            assertEquals("Dask Side of The Moon", response.getContent().getFirst().album());
-            assertEquals(BigDecimal.valueOf(61.90), response.getContent().getFirst().price());
-            assertEquals("Vinil Records", response.getContent().getFirst().store());
-            assertEquals(LocalDate.now(), response.getContent().getFirst().date());
+            assertEquals("Pink Floyd", response.getContent().getFirst().getArtist());
+            assertEquals(1973, response.getContent().getFirst().getYear());
+            assertEquals("Dask Side of The Moon", response.getContent().getFirst().getAlbum());
+            assertEquals(BigDecimal.valueOf(61.90), response.getContent().getFirst().getPrice());
+            assertEquals("Vinil Records", response.getContent().getFirst().getStore());
+            assertEquals(LocalDate.now(), response.getContent().getFirst().getDate());
 
             verify(productRepository, atLeastOnce()).findAll(any(Pageable.class));
             verifyNoMoreInteractions(productRepository);
@@ -239,7 +236,7 @@ class ProductServiceTest {
         void testCaseSuccessDelete() {
             doNothing().when(productRepository).deleteById(idCaptor.capture());
 
-            productService.deleteProduct(product.getId());
+            productService.deleteById(product.getId());
 
             assertEquals(product.getId(), idCaptor.getValue());
 
@@ -251,7 +248,7 @@ class ProductServiceTest {
         void testCaseNotFoundIdDelete() {
             doThrow(EmptyResultDataAccessException.class).when(productRepository).deleteById(idCaptor.capture());
 
-            assertThrows(EntityNotFoundException.class, () -> productService.deleteProduct(product.getId()));
+            assertThrows(EntityNotFoundException.class, () -> productService.deleteById(product.getId()));
             assertEquals(product.getId(), idCaptor.getValue());
 
             verify(productRepository, atLeastOnce()).deleteById(any());
@@ -260,7 +257,7 @@ class ProductServiceTest {
 
         @Test
         void testCaseNullIdDelete() {
-            assertThrows(NullValueInsertionException.class, () -> productService.deleteProduct(null));
+            assertThrows(NullInsertValueException.class, () -> productService.deleteById(null));
 
             verify(productRepository, never()).deleteById(any());
             verifyNoMoreInteractions(productRepository);
