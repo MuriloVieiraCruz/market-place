@@ -37,7 +37,7 @@ public class UserController implements IUserDocController {
 
     @DeleteMapping("/delete/{userId}")
     public ResponseEntity<Void> delete(@PathVariable("userId") UUID userId) {
-        userService.deleteUser(userId);
+        userService.deleteById(userId);
         return ResponseEntity.status(HttpStatus.OK).build();
     }
 }

@@ -60,7 +60,7 @@ public class ProductController implements IProductDocController {
     public ResponseEntity<Void> delete(
             @PathVariable("productId") UUID productId
     ) {
-        service.deleteProduct(productId);
+        service.deleteById(productId);
         return ResponseEntity.status(HttpStatus.OK).build();
     }
 

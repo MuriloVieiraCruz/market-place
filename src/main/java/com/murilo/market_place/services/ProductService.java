@@ -4,7 +4,7 @@ import com.murilo.market_place.domains.Product;
 import com.murilo.market_place.dtos.product.ProductRequestDTO;
 import com.murilo.market_place.exception.BucketS3InsertException;
 import com.murilo.market_place.exception.EntityNotFoundException;
-import com.murilo.market_place.exception.NullValueInsertionException;
+import com.murilo.market_place.exception.NullInsertValueException;
 import com.murilo.market_place.mapper.ProductMapper;
 import com.murilo.market_place.repositories.IProductRepository;
 import lombok.RequiredArgsConstructor;
@@ -41,7 +41,7 @@ public class ProductService {
         Product product = ProductMapper.toProduct(productRequestDTO);
 
         if (productRequestDTO.thumb().isEmpty()) {
-            throw new NullValueInsertionException("The image is required");
+            throw new NullInsertValueException("The image is required");
         }
 
         product.setThumb(uploadImg(productRequestDTO.thumb().get()));
@@ -67,7 +67,7 @@ public class ProductService {
     }
 
     @Transactional(rollbackFor = Exception.class)
-    public void deleteProduct(UUID productId) {
+    public void deleteById(UUID productId) {
         if (productId != null) {
             try {
                 productRepository.deleteById(productId);
@@ -75,7 +75,7 @@ public class ProductService {
                 throw new EntityNotFoundException(Product.class);
             }
         } else {
-            throw new NullValueInsertionException("ID is required for product removal");
+            throw new NullInsertValueException("ID is required for product removal");
         }
     }
 
@@ -109,7 +109,7 @@ public class ProductService {
 
     private Product findProduct(UUID productId) {
         if (Objects.isNull(productId)) {
-            throw new NullValueInsertionException("ID is required for product search");
+            throw new NullInsertValueException("ID is required for product search");
         }
 
         return productRepository.findById(productId).orElseThrow(() -> new EntityNotFoundException(Product.class));

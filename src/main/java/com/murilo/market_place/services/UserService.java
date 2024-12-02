@@ -4,7 +4,7 @@ import com.murilo.market_place.domains.Product;
 import com.murilo.market_place.domains.User;
 import com.murilo.market_place.dtos.user.UserRequestDTO;
 import com.murilo.market_place.exception.EntityNotFoundException;
-import com.murilo.market_place.exception.NullValueInsertionException;
+import com.murilo.market_place.exception.NullInsertValueException;
 import com.murilo.market_place.mapper.UserMapper;
 import com.murilo.market_place.repositories.IUserRepository;
 import lombok.RequiredArgsConstructor;
@@ -34,7 +34,7 @@ public class UserService {
     @Transactional(rollbackFor = Exception.class)
     public User updateUser(UserRequestDTO userRequestDTO) {
         if (Objects.isNull(userRequestDTO.id())) {
-            throw new NullValueInsertionException("The user ID is required for update");
+            throw new NullInsertValueException("The user ID is required for update");
         }
 
         existsUser(userRequestDTO.id());
@@ -52,7 +52,7 @@ public class UserService {
     }
 
     @Transactional(rollbackFor = Exception.class)
-    public void deleteUser(UUID userId) {
+    public void deleteById(UUID userId) {
         if (userId != null) {
             try {
                 userRepository.deleteById(userId);
@@ -60,13 +60,13 @@ public class UserService {
                 throw new EntityNotFoundException(Product.class);
             }
         } else {
-            throw new NullValueInsertionException("ID is required for user removal");
+            throw new NullInsertValueException("ID is required for user removal");
         }
     }
 
     private User findUserById(UUID userId) {
         if (Objects.isNull(userId)) {
-            throw new NullValueInsertionException("ID is required for user search");
+            throw new NullInsertValueException("ID is required for user search");
         }
 
         return userRepository.findById(userId).orElseThrow(() -> new EntityNotFoundException(User.class));
