@@ -9,6 +9,4 @@ import java.util.UUID;
 public interface ICreditCardRepository extends JpaRepository<CreditCard, UUID> {
 
     List<CreditCard> findAllByUserId(UUID userId);
-
-    CreditCard findByUserId(UUID userId);
 }

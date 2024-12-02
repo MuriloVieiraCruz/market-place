@@ -3,7 +3,7 @@ package com.murilo.market_place.domains;
 import jakarta.persistence.*;
 import lombok.*;
 
-import java.time.ZonedDateTime;
+import java.time.LocalDate;
 import java.util.UUID;
 
 @Table(name = "tb_credit_card")
@@ -22,7 +22,7 @@ public class CreditCard {
     private String number;
     private String holderName;
     private String cvv;
-    private ZonedDateTime expirationDate;
+    private LocalDate expirationDate;
 
     @ManyToOne
     @JoinColumn(name = "user_id")

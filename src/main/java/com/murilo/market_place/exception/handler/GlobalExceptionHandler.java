@@ -2,7 +2,7 @@ package com.murilo.market_place.exception.handler;
 
 import com.fasterxml.jackson.databind.exc.InvalidDefinitionException;
 import com.murilo.market_place.exception.EntityNotFoundException;
-import com.murilo.market_place.exception.NullValueInsertionException;
+import com.murilo.market_place.exception.NullInsertValueException;
 import com.murilo.market_place.exception.enums.ApiError;
 import jakarta.validation.ConstraintViolationException;
 import org.springframework.dao.DataIntegrityViolationException;
@@ -28,8 +28,8 @@ public class GlobalExceptionHandler {
 
     private static final String ERRORS_HEAD = "errors";
 
-    @ExceptionHandler(NullValueInsertionException.class)
-    public ResponseEntity<String> handleNullInsertValueException(NullValueInsertionException ex) {
+    @ExceptionHandler(NullInsertValueException.class)
+    public ResponseEntity<String> handleNullInsertValueException(NullInsertValueException ex) {
         return ResponseEntity.badRequest().body(ex.getMessage());
     }
 

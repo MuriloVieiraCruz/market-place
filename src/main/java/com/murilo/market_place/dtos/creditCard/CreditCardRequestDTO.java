@@ -6,7 +6,7 @@ import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 
 import java.io.Serializable;
-import java.time.ZonedDateTime;
+import java.time.LocalDate;
 import java.util.UUID;
 
 public record CreditCardRequestDTO(
@@ -14,6 +14,7 @@ public record CreditCardRequestDTO(
         UUID id,
 
         @NotBlank(message = "The card number is required")
+        @Size(min = 16, max = 16, message = "The card number must contain 16 digits")
         String number,
 
         @NotBlank(message = "The holder name is required")
@@ -25,7 +26,7 @@ public record CreditCardRequestDTO(
 
         @NotNull(message = "The expiration date is required")
         @Future(message = "The credit card is expired")
-        ZonedDateTime expirationDate,
+        LocalDate expirationDate,
 
         @NotNull(message = "The user is required")
         UUID userId

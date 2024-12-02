@@ -23,6 +23,6 @@ public class CreditCardMapper {
                 creditCard.getHolderName(),
                 creditCard.getCvv(),
                 creditCard.getExpirationDate(),
-                creditCard.getUser());
+                creditCard.getUser().getId());
     }
 }
