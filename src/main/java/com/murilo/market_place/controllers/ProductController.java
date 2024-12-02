@@ -3,10 +3,12 @@ package com.murilo.market_place.controllers;
 import com.murilo.market_place.controllers.documentation.IProductDocController;
 import com.murilo.market_place.dtos.product.ProductRequestDTO;
 import com.murilo.market_place.dtos.product.ProductResponseDTO;
+import com.murilo.market_place.mapper.ProductMapper;
 import com.murilo.market_place.services.ProductService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
@@ -26,21 +28,21 @@ public class ProductController implements IProductDocController {
     public ResponseEntity<ProductResponseDTO> create(
             @ModelAttribute @Valid ProductRequestDTO productRequestDTO
     ) {
-        return ResponseEntity.status(HttpStatus.CREATED).body(service.createProduct(productRequestDTO));
+        return ResponseEntity.status(HttpStatus.CREATED).body(ProductMapper.toResponse(service.createProduct(productRequestDTO)));
     }
 
     @PutMapping(value = "/update", consumes = { MediaType.MULTIPART_FORM_DATA_VALUE })
     public ResponseEntity<ProductResponseDTO> update(
             @ModelAttribute @Valid ProductRequestDTO productRequestDTO
     ) {
-        return ResponseEntity.status(HttpStatus.OK).body(service.updateProduct(productRequestDTO));
+        return ResponseEntity.status(HttpStatus.OK).body(ProductMapper.toResponse(service.updateProduct(productRequestDTO)));
     }
 
     @GetMapping("/{productId}")
     public ResponseEntity<ProductResponseDTO> findById(
             @PathVariable("productId") UUID productId
     ) {
-        return ResponseEntity.status(HttpStatus.OK).body(service.findById(productId));
+        return ResponseEntity.status(HttpStatus.OK).body(ProductMapper.toResponse(service.findById(productId)));
     }
 
     @GetMapping("/search")
@@ -48,7 +50,10 @@ public class ProductController implements IProductDocController {
             @RequestParam(name = "page", defaultValue = "0") int page,
             @RequestParam(name = "size", defaultValue = "20") int size
     ) {
-        return ResponseEntity.status(HttpStatus.OK).body(service.findAllProducts(PageRequest.of(page, size)));
+        return ResponseEntity.status(HttpStatus.OK).body(
+                new PageImpl<>(service.findAllProducts(PageRequest.of(page, size)).stream()
+                .map(ProductMapper::toResponse).toList())
+        );
     }
 
     @DeleteMapping("/delete/{productId}")

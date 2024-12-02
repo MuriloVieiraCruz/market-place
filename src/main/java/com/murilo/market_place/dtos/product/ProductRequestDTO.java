@@ -5,6 +5,7 @@ import jakarta.validation.constraints.NotNull;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.io.Serializable;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.Optional;
@@ -32,5 +33,6 @@ public record ProductRequestDTO(
 
         @DateTimeFormat(iso = DateTimeFormat.ISO.DATE)
         LocalDate date
-) {
+
+) implements Serializable {
 }

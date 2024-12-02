@@ -15,5 +15,6 @@ public record ProductResponseDTO(
         String store,
         String thumb,
         LocalDate date
+
 ) implements Serializable {
 }

@@ -3,7 +3,6 @@ package com.murilo.market_place.services;
 import com.murilo.market_place.domains.Product;
 import com.murilo.market_place.domains.User;
 import com.murilo.market_place.dtos.user.UserRequestDTO;
-import com.murilo.market_place.dtos.user.UserResponseDTO;
 import com.murilo.market_place.exception.EntityNotFoundException;
 import com.murilo.market_place.exception.NullValueInsertionException;
 import com.murilo.market_place.mapper.UserMapper;
@@ -23,17 +22,17 @@ public class UserService {
     private final IUserRepository userRepository;
 
     @Transactional(rollbackFor = Exception.class)
-    public UserResponseDTO createUser(UserRequestDTO userRequestDTO) {
+    public User createUser(UserRequestDTO userRequestDTO) {
         User user = UserMapper.toUser(userRequestDTO);
 
         //TODO Encrypt user password here
         user.setPassword(userRequestDTO.password());
 
-        return UserMapper.toResponse(userRepository.save(user));
+        return userRepository.save(user);
     }
 
     @Transactional(rollbackFor = Exception.class)
-    public UserResponseDTO updateUser(UserRequestDTO userRequestDTO) {
+    public User updateUser(UserRequestDTO userRequestDTO) {
         if (Objects.isNull(userRequestDTO.id())) {
             throw new NullValueInsertionException("The user ID is required for update");
         }
@@ -45,11 +44,11 @@ public class UserService {
         //TODO Encrypt user password here
         user.setPassword(userRequestDTO.password());
 
-        return UserMapper.toResponse(userRepository.save(user));
+        return userRepository.save(user);
     }
 
-    public UserResponseDTO findById(UUID userId) {
-        return UserMapper.toResponse(findUserById(userId));
+    public User findById(UUID userId) {
+        return findUserById(userId);
     }
 
     @Transactional(rollbackFor = Exception.class)

@@ -5,6 +5,8 @@ import jakarta.persistence.*;
 import lombok.*;
 
 import java.io.Serializable;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.UUID;
 
 @Table(name = "tb_user")
@@ -26,6 +28,8 @@ public class User implements Serializable {
     private String password;
     private Status status;
 
-    //TODO implement credit cards
+    @OneToMany(fetch = FetchType.LAZY, mappedBy = "user")
+    private List<CreditCard> creditCards = new ArrayList<>();
+
     //TODO implement roles
 }

@@ -2,17 +2,15 @@ package com.murilo.market_place.services;
 
 import com.murilo.market_place.domains.Product;
 import com.murilo.market_place.dtos.product.ProductRequestDTO;
-import com.murilo.market_place.dtos.product.ProductResponseDTO;
 import com.murilo.market_place.exception.BucketS3InsertException;
-import com.murilo.market_place.exception.NullValueInsertionException;
 import com.murilo.market_place.exception.EntityNotFoundException;
+import com.murilo.market_place.exception.NullValueInsertionException;
 import com.murilo.market_place.mapper.ProductMapper;
 import com.murilo.market_place.repositories.IProductRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.dao.EmptyResultDataAccessException;
 import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -39,7 +37,7 @@ public class ProductService {
     private final S3Client s3Client;
 
     @Transactional(rollbackFor = Exception.class)
-    public ProductResponseDTO createProduct(ProductRequestDTO productRequestDTO) {
+    public Product createProduct(ProductRequestDTO productRequestDTO) {
         Product product = ProductMapper.toProduct(productRequestDTO);
 
         if (productRequestDTO.thumb().isEmpty()) {
@@ -47,27 +45,25 @@ public class ProductService {
         }
 
         product.setThumb(uploadImg(productRequestDTO.thumb().get()));
-        return ProductMapper.toResponse(productRepository.save(product));
+        return productRepository.save(product);
     }
 
     @Transactional(rollbackFor = Exception.class)
-    public ProductResponseDTO updateProduct(ProductRequestDTO productRequestDTO) {
+    public Product updateProduct(ProductRequestDTO productRequestDTO) {
         Product product = findProduct(productRequestDTO.id());
 
         updateProduct(productRequestDTO, product);
-        return ProductMapper.toResponse(productRepository.save(product));
+        return productRepository.save(product);
     }
 
     @Transactional(readOnly = true)
-    public ProductResponseDTO findById(UUID productId) {
-        return ProductMapper.toResponse(findProduct(productId));
+    public Product findById(UUID productId) {
+        return findProduct(productId);
     }
 
     @Transactional(readOnly = true)
-    public Page<ProductResponseDTO> findAllProducts(Pageable pageable) {
-        Page<Product> productPage = productRepository.findAll(pageable);
-        return new PageImpl<>(productPage.stream()
-                .map(ProductMapper::toResponse).toList());
+    public Page<Product> findAllProducts(Pageable pageable) {
+        return productRepository.findAll(pageable);
     }
 
     @Transactional(rollbackFor = Exception.class)
