@@ -1,12 +1,13 @@
 package com.murilo.market_place.domains;
 
 import com.murilo.market_place.domains.enums.Status;
-import jakarta.persistence.*;
+import jakarta.persistence.Entity;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.Id;
+import jakarta.persistence.Table;
 import lombok.*;
 
 import java.io.Serializable;
-import java.util.ArrayList;
-import java.util.List;
 import java.util.UUID;
 
 @Table(name = "tb_user")
@@ -27,9 +28,6 @@ public class User implements Serializable {
     private String email;
     private String password;
     private Status status;
-
-    @OneToMany(fetch = FetchType.LAZY, mappedBy = "user")
-    private List<CreditCard> creditCards = new ArrayList<>();
 
     //TODO implement roles
 }

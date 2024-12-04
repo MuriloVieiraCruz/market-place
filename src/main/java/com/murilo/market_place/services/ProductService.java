@@ -114,4 +114,16 @@ public class ProductService {
 
         return productRepository.findById(productId).orElseThrow(() -> new EntityNotFoundException(Product.class));
     }
+
+    public void existsById(UUID productId) {
+        if (Objects.isNull(productId)) {
+            throw new NullInsertValueException("ID is required for product search");
+        }
+
+        boolean isProductExist = productRepository.existsById(productId);
+
+        if (!isProductExist) {
+            throw new EntityNotFoundException(Product.class);
+        }
+    }
 }
