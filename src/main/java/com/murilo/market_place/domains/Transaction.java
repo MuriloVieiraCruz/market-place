@@ -27,7 +27,7 @@ public class Transaction implements Serializable {
     private LocalDateTime moment;
     private PaymentMethod paymentMethod;
 
-    @OneToMany(mappedBy = "transacao", fetch = FetchType.EAGER, cascade = CascadeType.ALL, orphanRemoval = true)
+    @OneToMany(mappedBy = "transaction", fetch = FetchType.EAGER, cascade = CascadeType.ALL, orphanRemoval = true)
     private List<ItemTransaction> items;
 
     @ManyToOne
