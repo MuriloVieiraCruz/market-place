@@ -16,7 +16,6 @@ import org.mockito.Captor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.springframework.dao.EmptyResultDataAccessException;
 
 import java.util.Optional;
 import java.util.UUID;
@@ -40,6 +39,8 @@ public class UserServiceTest {
     @Captor
     private ArgumentCaptor<UUID> idCaptor;
 
+    private UUID existUserId;
+    private UUID nonExistUserId;
     private UserRequestDTO userRequestDTO;
     private User user;
 
@@ -47,6 +48,8 @@ public class UserServiceTest {
     void setup() {
         userRequestDTO = UserFactory.getUserRequestInstance();
         user = UserFactory.getUserInstance();
+        existUserId = user.getId();
+        nonExistUserId = UUID.randomUUID();
     }
 
     @Nested
@@ -60,8 +63,15 @@ public class UserServiceTest {
             User response = userService.createUser(userRequestDTO);
 
             assertNotNull(response);
-            assertEquals(UserMapper.toResponse(user), UserMapper.toResponse(response));
-            assertEquals(UserMapper.toUser(userRequestDTO), userCaptor.getValue());
+            assertEquals(user.getId(), response.getId());
+            assertEquals(user.getName(), response.getName());
+            assertEquals(user.getCpf(), response.getCpf());
+            assertEquals(user.getEmail(), response.getEmail());
+            assertEquals(user.getPassword(), response.getPassword());
+
+            assertEquals(user.getName(), userCaptor.getValue().getName());
+            assertEquals(user.getCpf(), userCaptor.getValue().getCpf());
+            assertEquals(user.getPassword(), userCaptor.getValue().getPassword());
 
             verify(userRepository, atLeastOnce()).save(any());
             verifyNoMoreInteractions(userRepository);
@@ -83,10 +93,10 @@ public class UserServiceTest {
     class update {
 
         @Test
-        void testCaseSuccessUpdate() {
-            userRequestDTO = UserFactory.getUserUpdateInstance();
+        void testCaseSuccess() {
+            userRequestDTO.setId(existUserId);
 
-            when(userRepository.existsById(userRequestDTO.id()))
+            when(userRepository.existsById(userRequestDTO.getId()))
                     .thenReturn(true);
 
             when(userRepository.save(userCaptor.capture()))
@@ -95,18 +105,25 @@ public class UserServiceTest {
             User response = userService.updateUser(userRequestDTO);
 
             var userRequest = UserMapper.toUser(userRequestDTO);
-            userRequest.setId(userRequestDTO.id());
+            userRequest.setId(userRequestDTO.getId());
 
             assertNotNull(response);
-            assertEquals(UserMapper.toResponse(user), UserMapper.toResponse(response));
-            assertEquals(userRequest, userCaptor.getValue());
+            assertEquals(user.getId(), response.getId());
+            assertEquals(user.getName(), response.getName());
+            assertEquals(user.getCpf(), response.getCpf());
+            assertEquals(user.getEmail(), response.getEmail());
+            assertEquals(user.getPassword(), response.getPassword());
+
+            assertEquals(user.getName(), userCaptor.getValue().getName());
+            assertEquals(user.getCpf(), userCaptor.getValue().getCpf());
+            assertEquals(user.getPassword(), userCaptor.getValue().getPassword());
 
             verify(userRepository, atLeastOnce()).save(any());
             verifyNoMoreInteractions(userRepository);
         }
 
         @Test
-        void testCaseNullIdUpdate() {
+        void testCaseNullId() {
             assertThrows(NullInsertValueException.class, () -> userService.updateUser(userRequestDTO));
 
             verify(userRepository, never()).existsById(any());
@@ -114,8 +131,8 @@ public class UserServiceTest {
         }
 
         @Test
-        void testCaseUserNotExistsUpdate() {
-            userRequestDTO = UserFactory.getUserUpdateInstance();
+        void testCaseUserNotExists() {
+            userRequestDTO.setId(existUserId);
 
             when(userRepository.existsById(any()))
                     .thenReturn(false);
@@ -127,7 +144,7 @@ public class UserServiceTest {
         }
 
         @Test
-        void testCaseExceptionTriggersRollbackUpdate() {
+        void testCaseExceptionTriggersRollback() {
             assertThrows(RuntimeException.class, () -> userService.updateUser(userRequestDTO));
 
             verify(userRepository, never()).save(any());
@@ -142,11 +159,15 @@ public class UserServiceTest {
         void testCaseSuccessFindById() {
             when(userRepository.findById(idCaptor.capture())).thenReturn(Optional.ofNullable(user));
 
-            User response = userService.findById(user.getId());
+            User response = userService.findById(existUserId);
 
             assertNotNull(response);
-            assertEquals(UserMapper.toResponse(user), UserMapper.toResponse(response));
-            assertEquals(user.getId(), idCaptor.getValue());
+            assertEquals(user.getId(), response.getId());
+            assertEquals(user.getName(), response.getName());
+            assertEquals(user.getCpf(), response.getCpf());
+            assertEquals(user.getEmail(), response.getEmail());
+            assertEquals(user.getPassword(), response.getPassword());
+            assertEquals(existUserId, idCaptor.getValue());
 
             verify(userRepository, atLeastOnce()).findById(any());
             verifyNoMoreInteractions(userRepository);
@@ -174,25 +195,27 @@ public class UserServiceTest {
     class deleteById {
 
         @Test
-        void testCaseSuccessDelete() {
+        void testCaseSuccess() {
+            when(userRepository.existsById(idCaptor.capture())).thenReturn(true);
             doNothing().when(userRepository).deleteById(idCaptor.capture());
 
             userService.deleteById(user.getId());
 
-            assertEquals(user.getId(), idCaptor.getValue());
+            assertEquals(existUserId, idCaptor.getValue());
 
             verify(userRepository, atLeastOnce()).deleteById(any());
             verifyNoMoreInteractions(userRepository);
         }
 
         @Test
-        void testCaseNotFoundIdDelete() {
-            doThrow(EmptyResultDataAccessException.class).when(userRepository).deleteById(idCaptor.capture());
+        void testCaseNotFoundId() {
+            doThrow(EntityNotFoundException.class).when(userRepository).existsById(idCaptor.capture());
 
-            assertThrows(EntityNotFoundException.class, () -> userService.deleteById(user.getId()));
-            assertEquals(user.getId(), idCaptor.getValue());
+            assertThrows(EntityNotFoundException.class, () -> userService.deleteById(nonExistUserId));
+            assertEquals(nonExistUserId, idCaptor.getValue());
 
-            verify(userRepository, atLeastOnce()).deleteById(any());
+            verify(userRepository, atLeastOnce()).existsById(any());
+            verify(userRepository, never()).deleteById(any());
             verifyNoMoreInteractions(userRepository);
         }
 
@@ -200,7 +223,9 @@ public class UserServiceTest {
         void testCaseNullId() {
             assertThrows(NullInsertValueException.class, () -> userService.deleteById(null));
 
+            verify(userRepository, never()).existsById(any());
             verify(userRepository, never()).deleteById(any());
+            verifyNoMoreInteractions(userRepository);
         }
     }
 }
