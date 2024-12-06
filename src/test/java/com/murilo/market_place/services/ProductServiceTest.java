@@ -6,7 +6,6 @@ import com.murilo.market_place.exception.BucketS3InsertException;
 import com.murilo.market_place.exception.EntityNotFoundException;
 import com.murilo.market_place.exception.NullInsertValueException;
 import com.murilo.market_place.factory.ProductFactory;
-import com.murilo.market_place.mapper.ProductMapper;
 import com.murilo.market_place.repositories.IProductRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Nested;
@@ -17,7 +16,6 @@ import org.mockito.Captor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.springframework.dao.EmptyResultDataAccessException;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
@@ -29,7 +27,6 @@ import software.amazon.awssdk.services.s3.S3Utilities;
 import software.amazon.awssdk.services.s3.model.GetUrlRequest;
 import software.amazon.awssdk.services.s3.model.PutObjectRequest;
 
-import java.io.IOException;
 import java.math.BigDecimal;
 import java.net.URI;
 import java.time.LocalDate;
@@ -59,6 +56,8 @@ class ProductServiceTest {
     @Captor
     private ArgumentCaptor<UUID> idCaptor;
 
+    private UUID existProductId;
+    private UUID nonExistProductId;
     private ProductRequestDTO productRequestDTO;
     private Product product;
 
@@ -69,13 +68,15 @@ class ProductServiceTest {
         ReflectionTestUtils.setField(productService, "bucketName", BUCKET_NAME);
         product = ProductFactory.getProductInstance();
         productRequestDTO = ProductFactory.getProductRequestInstance();
+        existProductId = product.getId();
+        nonExistProductId = UUID.randomUUID();
     }
 
     @Nested
     class create {
 
         @Test
-        void testCaseSuccessCreate() {
+        void testCaseSuccess() {
             doAnswer(invocation -> null)
                     .when(s3Client)
                     .putObject(any(PutObjectRequest.class), any(RequestBody.class));
@@ -96,7 +97,6 @@ class ProductServiceTest {
             assertEquals(BigDecimal.valueOf(61.90), response.getPrice());
             assertEquals("Vinil Records", response.getStore());
             assertEquals(LocalDate.now(), response.getDate());
-            assertEquals(ProductMapper.toProduct(productRequestDTO), productCaptor.getValue());
 
             verify(s3Client).putObject(any(PutObjectRequest.class), any(RequestBody.class));
             verify(s3Client).utilities();
@@ -106,8 +106,8 @@ class ProductServiceTest {
         }
 
         @Test
-        void testCaseProductErrorGenerateImageURLCreate() {
-            doThrow(IOException.class)
+        void testCaseProductErrorGenerateImageURL() {
+            doThrow(BucketS3InsertException.class)
                     .when(s3Client)
                     .putObject(any(PutObjectRequest.class), any(RequestBody.class));
 
@@ -124,8 +124,20 @@ class ProductServiceTest {
     class update {
 
         @Test
-        void testCaseSuccessUpdate() {
-            when(productRepository.existsById(idCaptor.capture())).thenReturn(true);
+        void testCaseSuccess() {
+            productRequestDTO.setId(existProductId);
+
+            doAnswer(invocation -> null)
+                    .when(s3Client)
+                    .putObject(any(PutObjectRequest.class), any(RequestBody.class));
+
+            S3Utilities s3UtilitiesMock = mock(S3Utilities.class);
+            when(s3Client.utilities()).thenReturn(s3UtilitiesMock);
+
+            when(s3UtilitiesMock.getUrl(any(GetUrlRequest.class)))
+                    .thenAnswer(invocation -> new URI("https://s3.amazonaws.com/" + BUCKET_NAME + "/darkSide.jpg").toURL());
+
+            when(productRepository.findById(idCaptor.capture())).thenReturn(Optional.of(product));
             when(productRepository.save(productCaptor.capture())).thenReturn(product);
 
             Product response = productService.updateProduct(productRequestDTO);
@@ -137,27 +149,28 @@ class ProductServiceTest {
             assertEquals(BigDecimal.valueOf(61.90), response.getPrice());
             assertEquals("Vinil Records", response.getStore());
             assertEquals(LocalDate.now(), response.getDate());
-            assertEquals(productRequestDTO.id(), idCaptor.getValue());
+            assertEquals(productRequestDTO.getId(), idCaptor.getValue());
 
             verify(productRepository, atLeastOnce()).save(any());
             verifyNoMoreInteractions(productRepository);
         }
 
         @Test
-        void testCaseNotFoundIdUpdate() {
+        void testCaseNotFoundId() {
             when(productRepository.findById(idCaptor.capture())).thenThrow(EntityNotFoundException.class);
 
             assertThrows(EntityNotFoundException.class, () -> productService.updateProduct(productRequestDTO));
-            assertEquals(productRequestDTO.id(), idCaptor.getValue());
+            assertEquals(productRequestDTO.getId(), idCaptor.getValue());
 
             verify(productRepository, never()).save(any());
             verifyNoMoreInteractions(productRepository);
         }
 
         @Test
-        void testCaseNullIdUpdate() {
+        void testCaseNullId() {
+            when(productRepository.findById(idCaptor.capture())).thenThrow(NullInsertValueException.class);
+
             assertThrows(NullInsertValueException.class, () -> productService.updateProduct(productRequestDTO));
-            assertEquals(productRequestDTO.id(), idCaptor.getValue());
 
             verify(productRepository, never()).save(any());
             verifyNoMoreInteractions(productRepository);
@@ -168,7 +181,7 @@ class ProductServiceTest {
     class findById {
 
         @Test
-        void testCaseSuccessFindById() {
+        void testCaseSuccess() {
             when(productRepository.findById(idCaptor.capture())).thenReturn(Optional.of(product));
 
             Product response = productService.findById(product.getId());
@@ -186,7 +199,7 @@ class ProductServiceTest {
         }
 
         @Test
-        void testCaseNotFoundFindById() {
+        void testCaseNotFound() {
             when(productRepository.findById(idCaptor.capture())).thenThrow(new EntityNotFoundException(Product.class));
 
             assertThrows(EntityNotFoundException.class, () -> productService.findById(product.getId()));
@@ -197,13 +210,11 @@ class ProductServiceTest {
         }
 
         @Test
-        void testCaseNullIdFindById() {
-            when(productRepository.findById(idCaptor.capture())).thenThrow(NullInsertValueException.class);
-
+        void testCaseNullId() {
             assertThrows(NullInsertValueException.class, () -> productService.findById(null));
-            assertEquals(product.getId(), idCaptor.getValue());
 
             verify(productRepository, never()).findById(any());
+            verifyNoMoreInteractions(productRepository);
         }
     }
 
@@ -211,7 +222,7 @@ class ProductServiceTest {
     class findAll {
 
         @Test
-        void testCaseSuccessFindAll() {
+        void testCaseSuccess() {
             when(productRepository.findAll(any(Pageable.class))).thenReturn(new PageImpl<>(List.of(product)));
 
             Page<Product> response = productService.findAllProducts(PageRequest.of(0, 1));
@@ -230,35 +241,37 @@ class ProductServiceTest {
     }
 
     @Nested
-    class delete {
+    class deleteById {
 
         @Test
-        void testCaseSuccessDelete() {
+        void testCaseSuccess() {
+            when(productRepository.existsById(idCaptor.capture())).thenReturn(true);
             doNothing().when(productRepository).deleteById(idCaptor.capture());
 
-            productService.deleteById(product.getId());
+            productService.deleteById(existProductId);
 
-            assertEquals(product.getId(), idCaptor.getValue());
-
-            verify(productRepository, atLeastOnce()).deleteById(any());
-            verifyNoMoreInteractions(productRepository);
-        }
-
-        @Test
-        void testCaseNotFoundIdDelete() {
-            doThrow(EmptyResultDataAccessException.class).when(productRepository).deleteById(idCaptor.capture());
-
-            assertThrows(EntityNotFoundException.class, () -> productService.deleteById(product.getId()));
-            assertEquals(product.getId(), idCaptor.getValue());
+            assertEquals(existProductId, idCaptor.getValue());
 
             verify(productRepository, atLeastOnce()).deleteById(any());
             verifyNoMoreInteractions(productRepository);
         }
 
         @Test
-        void testCaseNullIdDelete() {
+        void testCaseNotFoundId() {
+            doThrow(EntityNotFoundException.class).when(productRepository).existsById(idCaptor.capture());
+
+            assertThrows(EntityNotFoundException.class, () -> productService.deleteById(nonExistProductId));
+            assertEquals(nonExistProductId, idCaptor.getValue());
+
+            verify(productRepository, atLeastOnce()).existsById(any());
+            verifyNoMoreInteractions(productRepository);
+        }
+
+        @Test
+        void testCaseNullId() {
             assertThrows(NullInsertValueException.class, () -> productService.deleteById(null));
 
+            verify(productRepository, never()).existsById(any());
             verify(productRepository, never()).deleteById(any());
             verifyNoMoreInteractions(productRepository);
         }

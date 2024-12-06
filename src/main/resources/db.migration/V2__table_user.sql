@@ -5,5 +5,5 @@ CREATE TABLE tb_user (
     cpf VARCHAR(11) NOT NULL,
     email VARCHAR(100) NOT NULL,
     password VARCHAR(100) NOT NULL,
-    status VARCHAR(30) NOT NULL
+    status INT NOT NULL
 )
