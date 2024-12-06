@@ -8,11 +8,11 @@ public class CreditCardMapper {
 
     public static CreditCard toCreditCard(CreditCardRequestDTO creditCardDTO) {
         return CreditCard.builder()
-                .id(creditCardDTO.id())
-                .number(creditCardDTO.number())
-                .holderName(creditCardDTO.holderName())
-                .cvv(creditCardDTO.cvv())
-                .expirationDate(creditCardDTO.expirationDate())
+                .id(creditCardDTO.getId())
+                .number(creditCardDTO.getNumber())
+                .holderName(creditCardDTO.getHolderName())
+                .cvv(creditCardDTO.getCvv())
+                .expirationDate(creditCardDTO.getExpirationDate())
                 .build();
     }
 
@@ -22,7 +22,7 @@ public class CreditCardMapper {
                 creditCard.getNumber(),
                 creditCard.getHolderName(),
                 creditCard.getCvv(),
-                creditCard.getExpirationDate(),
+                creditCard.getExpirationDate().toString(),
                 creditCard.getUser().getId());
     }
 }

@@ -1,14 +1,12 @@
 package com.murilo.market_place.services;
 
 import com.murilo.market_place.domains.CreditCard;
-import com.murilo.market_place.domains.Product;
 import com.murilo.market_place.dtos.creditCard.CreditCardRequestDTO;
 import com.murilo.market_place.exception.EntityNotFoundException;
 import com.murilo.market_place.exception.NullInsertValueException;
 import com.murilo.market_place.mapper.CreditCardMapper;
 import com.murilo.market_place.repositories.ICreditCardRepository;
 import lombok.RequiredArgsConstructor;
-import org.springframework.dao.EmptyResultDataAccessException;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -27,7 +25,7 @@ public class CreditCardService {
 
         //TODO implementar busca do usuario pelo token recebido
         // não precisando passar ele por parâmetro
-        creditCard.setUser(userService.findById(creditCardRequestDTO.userId()));
+        creditCard.setUser(userService.findById(creditCardRequestDTO.getUserId()));
 
         //TODO utilizar API para verificar validade e informações do cartão
         return creditCardRepository.save(creditCard);
@@ -47,11 +45,8 @@ public class CreditCardService {
 
     public void deleteById(UUID cardId) {
         if (cardId != null) {
-            try {
-                creditCardRepository.deleteById(cardId);
-            } catch (EmptyResultDataAccessException e) {
-                throw new EntityNotFoundException(Product.class);
-            }
+            existsCreditCard(cardId);
+            creditCardRepository.deleteById(cardId);
         } else {
             throw new NullInsertValueException("ID is required for card removal");
         }
@@ -63,5 +58,16 @@ public class CreditCardService {
         }
 
         return creditCardRepository.findById(cardId).orElseThrow(() -> new EntityNotFoundException(CreditCard.class));
+    }
+
+    private void existsCreditCard(UUID creditCardId) {
+        if (creditCardId != null) {
+            boolean exist = creditCardRepository.existsById(creditCardId);
+            if (!exist) {
+                throw new EntityNotFoundException(CreditCard.class);
+            }
+        } else {
+            throw new NullInsertValueException("ID is required for card removal");
+        }
     }
 }

@@ -18,10 +18,19 @@ public class CreditCard {
 
     @Id
     @GeneratedValue
+    @Column(name = "card_id")
     private UUID id;
+
+    @Column(name = "card_number")
     private String number;
+
+    @Column(name = "card_holder_name")
     private String holderName;
+
+    @Column(name = "card_cvv")
     private String cvv;
+
+    @Column(name = "card_expiration_date")
     private LocalDate expirationDate;
 
     @ManyToOne
