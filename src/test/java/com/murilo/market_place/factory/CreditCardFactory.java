@@ -2,7 +2,6 @@ package com.murilo.market_place.factory;
 
 import com.murilo.market_place.domains.CreditCard;
 import com.murilo.market_place.dtos.creditCard.CreditCardRequestDTO;
-import com.murilo.market_place.dtos.creditCard.CreditCardResponseDTO;
 
 import java.time.LocalDate;
 import java.util.UUID;
@@ -20,6 +19,17 @@ public class CreditCardFactory {
                 .build();
     }
 
+    public static CreditCardRequestDTO getCardRequestInstance(UUID userId) {
+        return new CreditCardRequestDTO(
+                null,
+                "1234567891011123",
+                "Usuario teste",
+                "555",
+                LocalDate.now().plusDays(1),
+                userId
+        );
+    }
+
     public static CreditCardRequestDTO getCardRequestInstance() {
         return new CreditCardRequestDTO(
                 null,
@@ -31,14 +41,4 @@ public class CreditCardFactory {
         );
     }
 
-    public static CreditCardResponseDTO getCardResponseInstance() {
-        return new CreditCardResponseDTO(
-                UUID.randomUUID(),
-                "1234567891011123",
-                "Usuario teste",
-                "555",
-                LocalDate.now().plusDays(1),
-                UUID.randomUUID()
-        );
-    }
 }

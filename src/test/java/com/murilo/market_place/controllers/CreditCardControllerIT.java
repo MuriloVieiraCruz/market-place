@@ -2,78 +2,87 @@ package com.murilo.market_place.controllers;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
-import com.murilo.market_place.domains.CreditCard;
 import com.murilo.market_place.dtos.creditCard.CreditCardRequestDTO;
-import com.murilo.market_place.dtos.creditCard.CreditCardResponseDTO;
 import com.murilo.market_place.exception.EntityNotFoundException;
-import com.murilo.market_place.exception.NullInsertValueException;
 import com.murilo.market_place.factory.CreditCardFactory;
+import com.murilo.market_place.factory.UserFactory;
+import com.murilo.market_place.repositories.ICreditCardRepository;
 import com.murilo.market_place.services.CreditCardService;
+import com.murilo.market_place.services.UserService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
-import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
+import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.MediaType;
+import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
 
-import java.time.LocalDate;
-import java.util.List;
+import java.util.UUID;
 
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.*;
+import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-@WebMvcTest(controllers = CreditCardController.class)
-class CreditCardControllerTest {
+@SpringBootTest
+@AutoConfigureMockMvc
+@ActiveProfiles("test")
+class CreditCardControllerIT {
 
     @Autowired
     private MockMvc mockMvc;
 
-    @MockBean
+    @Autowired
     private CreditCardService creditCardService;
-    private final String baseUrl = "/api/v1/cards";
+
+    @Autowired
+    private UserService userService;
+
+    @Autowired
+    private ICreditCardRepository creditCardRepository;
 
     @Autowired
     private ObjectMapper objectMapper;
-    private CreditCard creditcard;
+
+    private final String baseUrl = "/api/v1/cards";
+
+    private UUID existCreditCardId;
+    private UUID userId;
+    private UUID nonExitedCreditCardId;
     private CreditCardRequestDTO requestDTO;
-    private CreditCardResponseDTO responseDTO;
 
     @BeforeEach
     void setup() {
+        creditCardRepository.deleteAll();
         objectMapper.registerModule(new JavaTimeModule());
-        creditcard = CreditCardFactory.getCardInstance();
-        requestDTO = CreditCardFactory.getCardRequestInstance();
+        userId = userService.createUser(UserFactory.getUserRequestInstance()).getId();
+        requestDTO = CreditCardFactory.getCardRequestInstance(userId);
+        existCreditCardId = creditCardService.create(requestDTO).getId();
+        nonExitedCreditCardId = UUID.randomUUID();
     }
 
     @Nested
-    class addCard {
+    class create {
 
         @Test
         void testCaseSuccess() throws Exception {
-            when(creditCardService.create(any()))
-                    .thenReturn(creditcard);
-
             mockMvc.perform(post(baseUrl + "/add")
                     .contentType(MediaType.APPLICATION_JSON)
                     .content(objectMapper.writeValueAsString(requestDTO)))
-                    .andExpect(status().isCreated());
+                    .andExpect(status().isCreated())
+                    .andExpect(jsonPath("$.id").exists())
+                    .andExpect(jsonPath("$.number").value(requestDTO.getNumber()))
+                    .andExpect(jsonPath("$.holderName").value(requestDTO.getHolderName()))
+                    .andExpect(jsonPath("$.cvv").value(requestDTO.getCvv()))
+                    .andExpect(jsonPath("$.expirationDate").value(requestDTO.getExpirationDate().toString()))
+                    .andExpect(jsonPath("$.userId").value(requestDTO.getUserId().toString()));
         }
 
         @Test
         void testCaseUserNotFound() throws Exception {
-            requestDTO = new CreditCardRequestDTO(null,
-                    "1234567891011123",
-                    "Usuario teste",
-                    "555",
-                    LocalDate.now().plusDays(1),
-                    null);
-
-            when(creditCardService.create(any()))
-                    .thenThrow(NullInsertValueException.class);
+            requestDTO.setUserId(null);
 
             mockMvc.perform(post(baseUrl + "/add")
                     .contentType(MediaType.APPLICATION_JSON)
@@ -83,12 +92,9 @@ class CreditCardControllerTest {
 
         @Test
         void testCaseBadRequest() throws Exception {
-            when(creditCardService.create(any()))
-                    .thenThrow(RuntimeException.class);
-
             mockMvc.perform(post(baseUrl + "/add")
                     .contentType(MediaType.APPLICATION_JSON)
-                    .content(objectMapper.writeValueAsString(null)))
+                    .content("{}"))
                     .andExpect(status().isBadRequest());
         }
     }
@@ -98,18 +104,12 @@ class CreditCardControllerTest {
 
         @Test
         void testCaseSuccess() throws Exception {
-            when(creditCardService.findAllCardsByUser(any()))
-                    .thenReturn(List.of(creditcard));
-
-            mockMvc.perform(get(baseUrl + "/search/" + requestDTO.userId()))
+            mockMvc.perform(get(baseUrl + "/search/" + userId))
                     .andExpect(status().isOk());
         }
 
         @Test
         void testCaseUserNotFound() throws Exception {
-            when(creditCardService.findAllCardsByUser(any()))
-                    .thenThrow(NullInsertValueException.class);
-
             mockMvc.perform(get(baseUrl + "/search/" + null))
                     .andExpect(status().isBadRequest());
         }
@@ -120,57 +120,44 @@ class CreditCardControllerTest {
 
         @Test
         void testCaseSuccess() throws Exception {
-            when(creditCardService.findById(any()))
-                    .thenReturn(creditcard);
-
-            mockMvc.perform(get(baseUrl + "/" + creditcard.getId()))
+            mockMvc.perform(get(baseUrl + "/" + existCreditCardId))
                     .andExpect(status().isOk());
         }
 
         @Test
         void testCaseNullValue() throws Exception {
-            when(creditCardService.findById(any()))
-                    .thenThrow(NullInsertValueException.class);
-
             mockMvc.perform(get(baseUrl + "/" + null))
                     .andExpect(status().isBadRequest());
         }
 
         @Test
         void testCaseCardNotFound() throws Exception {
-            when(creditCardService.findById(any()))
-                    .thenThrow(EntityNotFoundException.class);
-
-            mockMvc.perform(get(baseUrl + "/" + creditcard.getId()))
-                    .andExpect(status().isBadRequest());
+            mockMvc.perform(get(baseUrl + "/" + nonExitedCreditCardId))
+                    .andExpect(status().isBadRequest())
+                    .andExpect(result -> assertInstanceOf(EntityNotFoundException.class, result.getResolvedException()));
         }
     }
 
     @Nested
-    class deleteCardById {
+    class deleteById {
 
         @Test
         void testCaseSuccess() throws Exception {
-            doNothing().when(creditCardService).deleteById(any());
-
-            mockMvc.perform(delete(baseUrl + "/delete/" + creditcard.getId()))
+            mockMvc.perform(delete(baseUrl + "/delete/" + existCreditCardId))
                     .andExpect(status().isOk());
         }
 
         @Test
-        void testCaseNullValue() throws Exception {
-            doThrow(NullInsertValueException.class).when(creditCardService).deleteById(any());
-
+        void testCaseNullId() throws Exception {
             mockMvc.perform(delete(baseUrl + "/delete/" + null))
                     .andExpect(status().isBadRequest());
         }
 
         @Test
         void testCaseNotFound() throws Exception {
-            doThrow(EntityNotFoundException.class).when(creditCardService).deleteById(any());
-
-            mockMvc.perform(delete(baseUrl + "/delete/" + creditcard.getId()))
-                    .andExpect(status().isBadRequest());
+            mockMvc.perform(delete(baseUrl + "/delete/" + nonExitedCreditCardId))
+                    .andExpect(status().isBadRequest())
+                    .andExpect(result -> assertInstanceOf(EntityNotFoundException.class, result.getResolvedException()));
         }
     }
 }

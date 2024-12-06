@@ -16,7 +16,6 @@ import org.mockito.Captor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.springframework.dao.EmptyResultDataAccessException;
 
 import java.util.List;
 import java.util.Optional;
@@ -47,6 +46,8 @@ public class CreditCardServiceTest {
     @Captor
     private ArgumentCaptor<UUID> userIdCaptor;
 
+    private UUID existCreditCardId;
+    private UUID nonExistCreditCardId;
     private CreditCard creditCard;
     private CreditCardRequestDTO requestDTO;
 
@@ -54,6 +55,8 @@ public class CreditCardServiceTest {
     void setup() {
         creditCard = CreditCardFactory.getCardInstance();
         requestDTO = CreditCardFactory.getCardRequestInstance();
+        existCreditCardId = creditCard.getId();
+        nonExistCreditCardId = UUID.randomUUID();
     }
 
     @Nested
@@ -70,13 +73,18 @@ public class CreditCardServiceTest {
             CreditCard response = creditCardService.create(requestDTO);
 
             assertNotNull(response);
-            assertEquals(CreditCardMapper.toResponse(creditCard), CreditCardMapper.toResponse(response));
-            assertEquals(requestDTO.id(), cardCaptor.getValue().getId());
-            assertEquals(requestDTO.number(), cardCaptor.getValue().getNumber());
-            assertEquals(requestDTO.holderName(), cardCaptor.getValue().getHolderName());
-            assertEquals(requestDTO.cvv(), cardCaptor.getValue().getCvv());
-            assertEquals(requestDTO.expirationDate(), cardCaptor.getValue().getExpirationDate());
-            assertEquals(requestDTO.userId(), userIdCaptor.getValue());
+            assertEquals(creditCard.getId(), response.getId());
+            assertEquals(creditCard.getNumber(), response.getNumber());
+            assertEquals(creditCard.getHolderName(), response.getHolderName());
+            assertEquals(creditCard.getCvv(), response.getCvv());
+            assertEquals(creditCard.getExpirationDate(), response.getExpirationDate());
+            assertEquals(creditCard.getUser(), response.getUser());
+            assertEquals(requestDTO.getId(), cardCaptor.getValue().getId());
+            assertEquals(requestDTO.getNumber(), cardCaptor.getValue().getNumber());
+            assertEquals(requestDTO.getHolderName(), cardCaptor.getValue().getHolderName());
+            assertEquals(requestDTO.getCvv(), cardCaptor.getValue().getCvv());
+            assertEquals(requestDTO.getExpirationDate(), cardCaptor.getValue().getExpirationDate());
+            assertEquals(requestDTO.getUserId(), userIdCaptor.getValue());
 
             verify(creditCardRepository, atLeastOnce()).save(any());
             verify(userService, atLeastOnce()).findById(any());
@@ -104,12 +112,12 @@ public class CreditCardServiceTest {
                     .thenThrow(RuntimeException.class);
 
             assertThrows(RuntimeException.class, () -> creditCardService.create(requestDTO));
-            assertEquals(requestDTO.id(), cardCaptor.getValue().getId());
-            assertEquals(requestDTO.number(), cardCaptor.getValue().getNumber());
-            assertEquals(requestDTO.holderName(), cardCaptor.getValue().getHolderName());
-            assertEquals(requestDTO.cvv(), cardCaptor.getValue().getCvv());
-            assertEquals(requestDTO.expirationDate(), cardCaptor.getValue().getExpirationDate());
-            assertEquals(requestDTO.userId(), userIdCaptor.getValue());
+            assertEquals(requestDTO.getId(), cardCaptor.getValue().getId());
+            assertEquals(requestDTO.getNumber(), cardCaptor.getValue().getNumber());
+            assertEquals(requestDTO.getHolderName(), cardCaptor.getValue().getHolderName());
+            assertEquals(requestDTO.getCvv(), cardCaptor.getValue().getCvv());
+            assertEquals(requestDTO.getExpirationDate(), cardCaptor.getValue().getExpirationDate());
+            assertEquals(requestDTO.getUserId(), userIdCaptor.getValue());
 
             verify(creditCardRepository, atLeastOnce()).save(any());
             verify(userService, atLeastOnce()).findById(any());
@@ -149,11 +157,17 @@ public class CreditCardServiceTest {
         void testCaseSuccess() {
             when(creditCardRepository.findById(cardIdCaptor.capture())).thenReturn(Optional.ofNullable(creditCard));
 
-            CreditCard response = creditCardService.findById(creditCard.getId());
+            CreditCard response = creditCardService.findById(existCreditCardId);
 
             assertNotNull(response);
-            assertEquals(CreditCardMapper.toResponse(creditCard), CreditCardMapper.toResponse(response));
-            assertEquals(creditCard.getId(), cardIdCaptor.getValue());
+            assertEquals(creditCard.getId(), response.getId());
+            assertEquals(creditCard.getNumber(), response.getNumber());
+            assertEquals(creditCard.getHolderName(), response.getHolderName());
+            assertEquals(creditCard.getCvv(), response.getCvv());
+            assertEquals(creditCard.getExpirationDate(), response.getExpirationDate());
+            assertEquals(creditCard.getUser(), response.getUser());
+
+            assertEquals(existCreditCardId, cardIdCaptor.getValue());
 
             verify(creditCardRepository, atLeastOnce()).findById(any());
             verifyNoMoreInteractions(creditCardRepository);
@@ -161,9 +175,10 @@ public class CreditCardServiceTest {
 
         @Test
         void testCaseNotFound() {
-            when(creditCardRepository.findById(creditCard.getId())).thenThrow(EntityNotFoundException.class);
+            when(creditCardRepository.findById(cardIdCaptor.capture())).thenThrow(EntityNotFoundException.class);
 
-            assertThrows(EntityNotFoundException.class, () -> creditCardService.findById(creditCard.getId()));
+            assertThrows(EntityNotFoundException.class, () -> creditCardService.findById(nonExistCreditCardId));
+            assertEquals(nonExistCreditCardId, cardIdCaptor.getValue());
 
             verify(creditCardRepository, atLeastOnce()).findById(any());
             verifyNoMoreInteractions(creditCardRepository);
@@ -183,24 +198,26 @@ public class CreditCardServiceTest {
 
         @Test
         void testCaseSuccessDelete() {
+            when(creditCardRepository.existsById(existCreditCardId)).thenReturn(true);
             doNothing().when(creditCardRepository).deleteById(cardIdCaptor.capture());
 
-            creditCardService.deleteById(creditCard.getId());
+            creditCardService.deleteById(existCreditCardId);
 
-            assertEquals(creditCard.getId(), cardIdCaptor.getValue());
+            assertEquals(existCreditCardId, cardIdCaptor.getValue());
 
+            verify(creditCardRepository, atLeastOnce()).existsById(any());
             verify(creditCardRepository, atLeastOnce()).deleteById(any());
             verifyNoMoreInteractions(creditCardRepository);
         }
 
         @Test
         void testCaseNotFoundIdDelete() {
-            doThrow(EmptyResultDataAccessException.class).when(creditCardRepository).deleteById(cardIdCaptor.capture());
+            doThrow(EntityNotFoundException.class).when(creditCardRepository).existsById(cardIdCaptor.capture());
 
-            assertThrows(EntityNotFoundException.class, () -> creditCardService.deleteById(creditCard.getId()));
-            assertEquals(creditCard.getId(), cardIdCaptor.getValue());
+            assertThrows(EntityNotFoundException.class, () -> creditCardService.deleteById(nonExistCreditCardId));
+            assertEquals(nonExistCreditCardId, cardIdCaptor.getValue());
 
-            verify(creditCardRepository, atLeastOnce()).deleteById(any());
+            verify(creditCardRepository, atLeastOnce()).existsById(any());
             verifyNoMoreInteractions(creditCardRepository);
         }
 
@@ -208,6 +225,7 @@ public class CreditCardServiceTest {
         void testCaseNullId() {
             assertThrows(NullInsertValueException.class, () -> creditCardService.deleteById(null));
 
+            verify(creditCardRepository, never()).existsById(any());
             verify(creditCardRepository, never()).deleteById(any());
             verifyNoMoreInteractions(creditCardRepository);
         }
