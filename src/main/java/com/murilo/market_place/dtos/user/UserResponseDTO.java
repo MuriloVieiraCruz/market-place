@@ -1,14 +1,22 @@
 package com.murilo.market_place.dtos.user;
 
+import lombok.AllArgsConstructor;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
+
 import java.io.Serializable;
 import java.util.UUID;
 
-public record UserResponseDTO(
+@Getter
+@Setter
+@AllArgsConstructor
+@NoArgsConstructor
+public class UserResponseDTO implements Serializable {
 
-        UUID id,
-        String name,
-        String cpf,
-        String email,
-        String password
-) implements Serializable {
+    private UUID id;
+    private String name;
+    private String cpf;
+    private String email;
+    private String password;
 }

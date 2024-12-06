@@ -9,10 +9,10 @@ public class UserMapper {
 
     public static User toUser(UserRequestDTO userDTO) {
         return User.builder()
-                .name(userDTO.name())
-                .cpf(userDTO.cpf())
-                .email(userDTO.email())
-                .password(userDTO.password())
+                .name(userDTO.getName())
+                .cpf(userDTO.getCpf())
+                .email(userDTO.getEmail())
+                .password(userDTO.getPassword())
                 .status(Status.WAITING_ACTIVATION)
                 .build();
     }

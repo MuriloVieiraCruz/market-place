@@ -1,10 +1,7 @@
 package com.murilo.market_place.domains;
 
 import com.murilo.market_place.domains.enums.Status;
-import jakarta.persistence.Entity;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.Id;
-import jakarta.persistence.Table;
+import jakarta.persistence.*;
 import lombok.*;
 
 import java.io.Serializable;
@@ -22,11 +19,22 @@ public class User implements Serializable {
 
     @Id
     @GeneratedValue
+    @Column(name = "user_id")
     private UUID id;
+
+    @Column(name = "user_name")
     private String name;
+
+    @Column(name = "user_cpf")
     private String cpf;
+
+    @Column(name = "user_email")
     private String email;
+
+    @Column(name = "user_password")
     private String password;
+
+    @Column(name = "user_status")
     private Status status;
 
     //TODO implement roles

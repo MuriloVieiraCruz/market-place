@@ -2,27 +2,34 @@ package com.murilo.market_place.dtos.user;
 
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
+import lombok.AllArgsConstructor;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
 import org.hibernate.validator.constraints.br.CPF;
 
 import java.io.Serializable;
 import java.util.UUID;
 
-public record UserRequestDTO(
+@Getter
+@Setter
+@AllArgsConstructor
+@NoArgsConstructor
+public class UserRequestDTO implements Serializable {
 
-        UUID id,
+        private UUID id;
 
         @NotBlank(message = "Name is required")
-        String name,
+        private String name;
 
         @CPF(message = "Cpf is in an invalid format")
         @NotBlank(message = "Cpf is required")
-        String cpf,
+        private String cpf;
 
         @Email(message = "Email is in an invalid format")
         @NotBlank(message = "Email is required")
-        String email,
+        private String email;
 
         @NotBlank(message = "Password is required")
-        String password
-) implements Serializable {
+        private String password;
 }
