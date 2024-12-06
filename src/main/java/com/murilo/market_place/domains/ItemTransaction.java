@@ -19,9 +19,16 @@ public class ItemTransaction implements Serializable {
 
     @Id
     @GeneratedValue
+    @Column(name = "item_transaction_id")
     private UUID id;
+
+    @Column(name = "item_transaction_product_name")
     private String productName;
+
+    @Column(name = "item_transaction_quantity")
     private Integer quantity;
+
+    @Column(name = "item_transaction_price")
     private BigDecimal price;
 
     @ManyToOne

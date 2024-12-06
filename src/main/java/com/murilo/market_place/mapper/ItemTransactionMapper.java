@@ -9,13 +9,13 @@ public class ItemTransactionMapper {
 
     public static ItemTransaction toItemTransaction(ProductCartDTO productCartDTO) {
         return ItemTransaction.builder()
-                .productName(productCartDTO.productName())
-                .quantity(productCartDTO.quantity())
-                .price(productCartDTO.price())
+                .productName(productCartDTO.getProductName())
+                .quantity(productCartDTO.getQuantity())
+                .price(productCartDTO.getPrice())
                 .product(
                         Product.builder()
-                                .id(productCartDTO.productId())
-                                .album(productCartDTO.productName())
+                                .id(productCartDTO.getProductId())
+                                .album(productCartDTO.getProductName())
                                 .build()
                 )
                 .build();

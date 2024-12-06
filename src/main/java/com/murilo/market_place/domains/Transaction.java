@@ -22,9 +22,16 @@ public class Transaction implements Serializable {
 
     @Id
     @GeneratedValue
+    @Column(name = "transaction_id")
     private UUID id;
+
+    @Column(name = "transaction_total_payment")
     private BigDecimal totalPayment;
+
+    @Column(name = "transaction_moment")
     private LocalDateTime moment;
+
+    @Column(name = "transaction_payment_method")
     private PaymentMethod paymentMethod;
 
     @OneToMany(mappedBy = "transaction", fetch = FetchType.EAGER, cascade = CascadeType.ALL, orphanRemoval = true)

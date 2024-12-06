@@ -32,22 +32,22 @@ public class TransactionService {
     private final ProductService productService;
 
     public Transaction create(TransactionRequestDTO requestDTO) {
-        User user = userService.findById(requestDTO.userId());
+        User user = userService.findById(requestDTO.getUserId());
 
         List<ItemTransaction> itemsTransaction = new ArrayList<>();
         BigDecimal total = BigDecimal.ZERO;
 
-        for (ProductCartDTO productCart : requestDTO.purchaseProducts()) {
-            productService.existsById(productCart.productId());
+        for (ProductCartDTO productCart : requestDTO.getPurchaseProducts()) {
+            productService.existsProduct(productCart.getProductId());
             itemsTransaction.add(ItemTransactionMapper.toItemTransaction(productCart));
-            total = total.add(productCart.price().multiply(BigDecimal.valueOf(productCart.quantity())));
+            total = total.add(productCart.getPrice().multiply(BigDecimal.valueOf(productCart.getQuantity())));
         }
 
         //TODO inserir futuramente o tipo de pagamento, dependendo do tipo realizar validações com o padrão strategy
 
         Transaction transaction = Transaction.builder()
                 .user(user)
-                .paymentMethod(PaymentMethod.fromCode(requestDTO.paymentMethod()))
+                .paymentMethod(PaymentMethod.fromCode(requestDTO.getPaymentMethod()))
                 .moment(LocalDateTime.now())
                 .items(itemsTransaction)
                 .totalPayment(total)
