@@ -9,7 +9,6 @@ import com.murilo.market_place.mapper.ProductMapper;
 import com.murilo.market_place.repositories.IProductRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.dao.EmptyResultDataAccessException;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
@@ -40,17 +39,17 @@ public class ProductService {
     public Product createProduct(ProductRequestDTO productRequestDTO) {
         Product product = ProductMapper.toProduct(productRequestDTO);
 
-        if (productRequestDTO.thumb().isEmpty()) {
+        if (productRequestDTO.getThumb().isEmpty()) {
             throw new NullInsertValueException("The image is required");
         }
 
-        product.setThumb(uploadImg(productRequestDTO.thumb().get()));
+        product.setThumb(uploadImg(productRequestDTO.getThumb().get()));
         return productRepository.save(product);
     }
 
     @Transactional(rollbackFor = Exception.class)
     public Product updateProduct(ProductRequestDTO productRequestDTO) {
-        Product product = findProduct(productRequestDTO.id());
+        Product product = findProduct(productRequestDTO.getId());
 
         updateProduct(productRequestDTO, product);
         return productRepository.save(product);
@@ -69,11 +68,8 @@ public class ProductService {
     @Transactional(rollbackFor = Exception.class)
     public void deleteById(UUID productId) {
         if (productId != null) {
-            try {
-                productRepository.deleteById(productId);
-            } catch (EmptyResultDataAccessException e) {
-                throw new EntityNotFoundException(Product.class);
-            }
+            existsProduct(productId);
+            productRepository.deleteById(productId);
         } else {
             throw new NullInsertValueException("ID is required for product removal");
         }
@@ -104,7 +100,7 @@ public class ProductService {
     private void updateProduct(ProductRequestDTO dto, Product product) {
         Product productUpdated = ProductMapper.toUpdatedProduct(dto, product);
         //TODO implement the deletion of the old image on S3 in the future, if a new image is inserted
-        dto.thumb().ifPresent(file -> productUpdated.setThumb(uploadImg(file)));
+        dto.getThumb().ifPresent(file -> productUpdated.setThumb(uploadImg(file)));
     }
 
     private Product findProduct(UUID productId) {
@@ -115,15 +111,14 @@ public class ProductService {
         return productRepository.findById(productId).orElseThrow(() -> new EntityNotFoundException(Product.class));
     }
 
-    public void existsById(UUID productId) {
-        if (Objects.isNull(productId)) {
+    public void existsProduct(UUID productId) {
+        if (productId != null) {
+            boolean isProductExist = productRepository.existsById(productId);
+            if (!isProductExist) {
+                throw new EntityNotFoundException(Product.class);
+            }
+        } else {
             throw new NullInsertValueException("ID is required for product search");
-        }
-
-        boolean isProductExist = productRepository.existsById(productId);
-
-        if (!isProductExist) {
-            throw new EntityNotFoundException(Product.class);
         }
     }
 }
