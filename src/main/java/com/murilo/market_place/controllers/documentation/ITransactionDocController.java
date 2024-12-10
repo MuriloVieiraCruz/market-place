@@ -51,7 +51,7 @@ public interface ITransactionDocController {
                     @ApiResponse(description = "Transactions found", responseCode = "200"),
             }
     )
-    ResponseEntity<Page<TransactionResponseDTO>> findAll(int page, int size);
+    ResponseEntity<Page<TransactionResponseDTO>> findAll(int page, int size, UUID userId);
 
     @Operation(
             description = "Find specific transaction to a user",

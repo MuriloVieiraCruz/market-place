@@ -81,7 +81,7 @@ class ProductControllerIT {
 
         @Test
         void testCaseSuccess() throws Exception {
-            mockMvc.perform(multipart(baseUrl + "/create")
+            mockMvc.perform(multipart(baseUrl)
                             .file("thumb", productRequestDTO.getThumb().get().getBytes())
                             .param("artist", productRequestDTO.getArtist())
                             .param("year", productRequestDTO.getYear().toString())
@@ -103,7 +103,7 @@ class ProductControllerIT {
 
         @Test
         void testCaseBadRequest() throws Exception {
-            mockMvc.perform(multipart(baseUrl + "/create")).andExpect(status().isBadRequest());
+            mockMvc.perform(multipart(baseUrl)).andExpect(status().isBadRequest());
         }
     }
 
@@ -114,7 +114,7 @@ class ProductControllerIT {
         void testCaseSuccess() throws Exception {
             productRequestDTO.setId(existProductId);
 
-            MockMultipartHttpServletRequestBuilder multipart = (MockMultipartHttpServletRequestBuilder) multipart(baseUrl + "/update").with(request -> {
+            MockMultipartHttpServletRequestBuilder multipart = (MockMultipartHttpServletRequestBuilder) multipart(baseUrl).with(request -> {
                 request.setMethod(String.valueOf(HttpMethod.PUT));
                 return request;
             });
@@ -134,7 +134,7 @@ class ProductControllerIT {
 
         @Test
         void testCaseBadRequest() throws Exception {
-            MockMultipartHttpServletRequestBuilder multipart = (MockMultipartHttpServletRequestBuilder) multipart(baseUrl + "/update/").with(request -> {
+            MockMultipartHttpServletRequestBuilder multipart = (MockMultipartHttpServletRequestBuilder) multipart(baseUrl).with(request -> {
                 request.setMethod(String.valueOf(HttpMethod.PUT));
                 return request;
             });
@@ -152,7 +152,7 @@ class ProductControllerIT {
 
         @Test
         void testCaseNullInsertValueException() throws Exception {
-            MockMultipartHttpServletRequestBuilder multipart = (MockMultipartHttpServletRequestBuilder) multipart(baseUrl + "/update/").with(request -> {
+            MockMultipartHttpServletRequestBuilder multipart = (MockMultipartHttpServletRequestBuilder) multipart(baseUrl).with(request -> {
                 request.setMethod(String.valueOf(HttpMethod.PUT));
                 return request;
             });
@@ -196,7 +196,7 @@ class ProductControllerIT {
     class findAll {
 
         @Test
-        void testSuccessFindAll() throws Exception {
+        void testSuccess() throws Exception {
             mockMvc.perform(get(baseUrl + "/search"))
                     .andExpect(status().isOk());
         }
@@ -207,19 +207,19 @@ class ProductControllerIT {
 
         @Test
         void testCaseSuccess() throws Exception {
-            mockMvc.perform(delete(baseUrl + "/delete/" + existProductId))
+            mockMvc.perform(delete(baseUrl + "/" + existProductId))
                     .andExpect(status().isOk());
         }
 
         @Test
         void testCaseNullId() throws Exception {
-            mockMvc.perform(delete(baseUrl + "/delete/" + null))
+            mockMvc.perform(delete(baseUrl + "/" + null))
                     .andExpect(status().isBadRequest());
         }
 
         @Test
         void testCaseNotFound() throws Exception {
-            mockMvc.perform(delete(baseUrl + "/delete/" + nonExitedProductId))
+            mockMvc.perform(delete(baseUrl + "/" + nonExitedProductId))
                     .andExpect(status().isBadRequest())
                     .andExpect(result -> assertInstanceOf(EntityNotFoundException.class, result.getResolvedException()));
         }

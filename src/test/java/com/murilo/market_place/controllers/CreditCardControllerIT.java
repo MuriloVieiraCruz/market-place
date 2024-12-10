@@ -143,19 +143,19 @@ class CreditCardControllerIT {
 
         @Test
         void testCaseSuccess() throws Exception {
-            mockMvc.perform(delete(baseUrl + "/delete/" + existCreditCardId))
+            mockMvc.perform(delete(baseUrl + "/" + existCreditCardId))
                     .andExpect(status().isOk());
         }
 
         @Test
         void testCaseNullId() throws Exception {
-            mockMvc.perform(delete(baseUrl + "/delete/" + null))
+            mockMvc.perform(delete(baseUrl + "/" + null))
                     .andExpect(status().isBadRequest());
         }
 
         @Test
         void testCaseNotFound() throws Exception {
-            mockMvc.perform(delete(baseUrl + "/delete/" + nonExitedCreditCardId))
+            mockMvc.perform(delete(baseUrl + "/" + nonExitedCreditCardId))
                     .andExpect(status().isBadRequest())
                     .andExpect(result -> assertInstanceOf(EntityNotFoundException.class, result.getResolvedException()));
         }

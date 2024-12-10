@@ -20,12 +20,12 @@ public class UserController implements IUserDocController {
 
     private final UserService userService;
 
-    @PostMapping("/create")
+    @PostMapping
     public ResponseEntity<UserResponseDTO> create(@RequestBody @Valid UserRequestDTO userRequestDTO) {
         return ResponseEntity.status(HttpStatus.CREATED).body(UserMapper.toResponse(userService.createUser(userRequestDTO)));
     }
 
-    @PutMapping("/update")
+    @PutMapping
     public ResponseEntity<UserResponseDTO> update(@RequestBody @Valid UserRequestDTO userRequestDTO) {
         return ResponseEntity.status(HttpStatus.OK).body(UserMapper.toResponse(userService.updateUser(userRequestDTO)));
     }
@@ -35,7 +35,7 @@ public class UserController implements IUserDocController {
         return ResponseEntity.status(HttpStatus.OK).body(UserMapper.toResponse(userService.findById(userId)));
     }
 
-    @DeleteMapping("/delete/{userId}")
+    @DeleteMapping("/{userId}")
     public ResponseEntity<Void> delete(@PathVariable("userId") UUID userId) {
         userService.deleteById(userId);
         return ResponseEntity.status(HttpStatus.OK).build();

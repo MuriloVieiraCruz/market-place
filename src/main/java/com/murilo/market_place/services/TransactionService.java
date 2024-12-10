@@ -53,11 +53,16 @@ public class TransactionService {
                 .totalPayment(total)
                 .build();
 
+        for (ItemTransaction item : itemsTransaction) {
+            item.setTransaction(transaction);
+        }
+
         return transactionRepository.save(transaction);
     }
 
-    public Page<Transaction> findAll(Pageable pageable) {
-        return transactionRepository.findAll(pageable);
+    public Page<Transaction> findAll(UUID userId, Pageable pageable) {
+        userService.existsUser(userId);
+        return transactionRepository.findByUserId(userId, pageable);
     }
 
     public Transaction findById(UUID transactionId) {
@@ -69,6 +74,6 @@ public class TransactionService {
             throw new NullInsertValueException("ID is required for transaction search");
         }
 
-        return transactionRepository.findById(transactionId).orElseThrow(() -> new EntityNotFoundException(Product.class));
+        return transactionRepository.findWithItemsById(transactionId).orElseThrow(() -> new EntityNotFoundException(Product.class));
     }
 }

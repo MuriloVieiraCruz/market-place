@@ -61,9 +61,7 @@ class UserControllerIT {
 
         @Test
         void testCaseSuccess() throws Exception {
-            userRequestDTO.setEmail("segundoTest@gmail.com");
-
-            mockMvc.perform(post(baseUrl + "/create")
+            mockMvc.perform(post(baseUrl)
                             .contentType(MediaType.APPLICATION_JSON)
                             .content(objectMapper.writeValueAsString(userRequestDTO)))
                     .andExpect(status().isCreated())
@@ -78,7 +76,7 @@ class UserControllerIT {
 
         @Test
         void testCaseBadRequest() throws Exception {
-            mockMvc.perform(post(baseUrl + "/create")
+            mockMvc.perform(post(baseUrl)
                             .contentType(MediaType.APPLICATION_JSON)
                             .content("{}"))
                     .andExpect(status().isBadRequest());
@@ -92,7 +90,7 @@ class UserControllerIT {
         void testCaseSuccess() throws Exception {
             userRequestDTO.setId(existUserId);
 
-            mockMvc.perform(put(baseUrl + "/update")
+            mockMvc.perform(put(baseUrl)
                             .contentType(MediaType.APPLICATION_JSON)
                             .content(objectMapper.writeValueAsString(userRequestDTO)))
                     .andExpect(status().isOk())
@@ -105,7 +103,7 @@ class UserControllerIT {
 
         @Test
         void testCaseBadRequest() throws Exception {
-            mockMvc.perform(put(baseUrl + "/update")
+            mockMvc.perform(put(baseUrl)
                             .contentType(MediaType.APPLICATION_JSON)
                             .content("{}"))
                     .andExpect(status().isBadRequest());
@@ -113,7 +111,7 @@ class UserControllerIT {
 
         @Test
         void testCaseNullInsertValueException() throws Exception {
-            mockMvc.perform(put(baseUrl + "/update")
+            mockMvc.perform(put(baseUrl)
                             .contentType(MediaType.APPLICATION_JSON)
                             .content(objectMapper.writeValueAsString(userRequestDTO)))
                     .andExpect(status().isBadRequest())
@@ -149,19 +147,19 @@ class UserControllerIT {
 
         @Test
         void testCaseSuccess() throws Exception {
-            mockMvc.perform(delete(baseUrl + "/delete/" + existUserId))
+            mockMvc.perform(delete(baseUrl + "/" + existUserId))
                     .andExpect(status().isOk());
         }
 
         @Test
         void testCaseNullId() throws Exception {
-            mockMvc.perform(delete(baseUrl + "/delete/" + null))
+            mockMvc.perform(delete(baseUrl + "/" + null))
                     .andExpect(status().isBadRequest());
         }
 
         @Test
         void testCaseNotFound() throws Exception {
-            mockMvc.perform(delete(baseUrl + "/delete/" + nonExitedUserId))
+            mockMvc.perform(delete(baseUrl + "/" + nonExitedUserId))
                     .andExpect(status().isBadRequest())
                     .andExpect(result -> assertInstanceOf(EntityNotFoundException.class, result.getResolvedException()));
         }

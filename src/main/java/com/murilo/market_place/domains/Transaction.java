@@ -34,7 +34,7 @@ public class Transaction implements Serializable {
     @Column(name = "transaction_payment_method")
     private PaymentMethod paymentMethod;
 
-    @OneToMany(mappedBy = "transaction", fetch = FetchType.EAGER, cascade = CascadeType.ALL, orphanRemoval = true)
+    @OneToMany(mappedBy = "transaction", fetch = FetchType.LAZY, cascade = CascadeType.ALL, orphanRemoval = true)
     private List<ItemTransaction> items;
 
     @ManyToOne

@@ -24,14 +24,14 @@ public class ProductController implements IProductDocController {
 
     private final ProductService service;
 
-    @PostMapping(value = "/create", consumes = { MediaType.MULTIPART_FORM_DATA_VALUE })
+    @PostMapping(consumes = { MediaType.MULTIPART_FORM_DATA_VALUE })
     public ResponseEntity<ProductResponseDTO> create(
             @ModelAttribute @Valid ProductRequestDTO productRequestDTO
     ) {
         return ResponseEntity.status(HttpStatus.CREATED).body(ProductMapper.toResponse(service.createProduct(productRequestDTO)));
     }
 
-    @PutMapping(value = "/update", consumes = { MediaType.MULTIPART_FORM_DATA_VALUE })
+    @PutMapping(consumes = { MediaType.MULTIPART_FORM_DATA_VALUE })
     public ResponseEntity<ProductResponseDTO> update(
             @ModelAttribute @Valid ProductRequestDTO productRequestDTO
     ) {
@@ -56,7 +56,7 @@ public class ProductController implements IProductDocController {
         );
     }
 
-    @DeleteMapping("/delete/{productId}")
+    @DeleteMapping("/{productId}")
     public ResponseEntity<Void> delete(
             @PathVariable("productId") UUID productId
     ) {

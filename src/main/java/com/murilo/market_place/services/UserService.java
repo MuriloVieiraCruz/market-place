@@ -63,7 +63,7 @@ public class UserService {
         return userRepository.findById(userId).orElseThrow(() -> new EntityNotFoundException(User.class));
     }
 
-    private void existsUser(UUID userId) {
+    public void existsUser(UUID userId) {
         if (userId != null) {
             boolean exist = userRepository.existsById(userId);
             if (!exist) {

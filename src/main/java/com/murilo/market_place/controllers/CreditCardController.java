@@ -39,7 +39,7 @@ public class CreditCardController implements ICreditCardDocController {
         return ResponseEntity.status(HttpStatus.OK).body(CreditCardMapper.toResponse(creditCardService.findById(cardId)));
     }
 
-    @DeleteMapping("/delete/{cardId}")
+    @DeleteMapping("/{cardId}")
     public ResponseEntity<Void> deleteCardById(@PathVariable("cardId") UUID cardId) {
         creditCardService.deleteById(cardId);
         return ResponseEntity.status(HttpStatus.OK).build();
