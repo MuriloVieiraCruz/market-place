@@ -7,6 +7,7 @@ import com.murilo.market_place.exception.NullInsertValueException;
 import com.murilo.market_place.mapper.UserMapper;
 import com.murilo.market_place.repositories.IUserRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -18,13 +19,14 @@ import java.util.UUID;
 public class UserService {
 
     private final IUserRepository userRepository;
+    private final PasswordEncoder passwordEncoder;
 
     @Transactional(rollbackFor = Exception.class)
     public User createUser(UserRequestDTO userRequestDTO) {
         User user = UserMapper.toUser(userRequestDTO);
-
-        //TODO Encrypt user password here
-        user.setPassword(userRequestDTO.getPassword());
+        validateUser(user);
+        String passwordEncoded = passwordEncoder.encode(userRequestDTO.getPassword());
+        user.setPassword(passwordEncoded);
 
         return userRepository.save(user);
     }
@@ -37,10 +39,11 @@ public class UserService {
 
         existsUser(userRequestDTO.getId());
         User user = UserMapper.toUser(userRequestDTO);
+        validateUser(user);
         user.setId(userRequestDTO.getId());
 
-        //TODO Encrypt user password here
-        user.setPassword(userRequestDTO.getPassword());
+        String passwordEncoded = passwordEncoder.encode(userRequestDTO.getPassword());
+        user.setPassword(passwordEncoded);
 
         return userRepository.save(user);
     }
@@ -71,6 +74,38 @@ public class UserService {
             }
         } else {
             throw new NullInsertValueException("ID is required for user removal");
+        }
+    }
+
+    private void validateUser(User user) {
+        if (user.getId() != null) {
+            validateCpfAndEmailForExistingUser(user);
+        } else {
+            validateCpfAndEmailForNewUser(user);
+        }
+    }
+
+    private void validateCpfAndEmailForExistingUser(User user) {
+        userRepository.findByCpf(user.getCpf())
+                .filter(existingUser -> !existingUser.getId().equals(user.getId()))
+                .ifPresent(existingUser -> {
+                    throw new IllegalArgumentException("CPF is already in use");
+                });
+
+        userRepository.findByEmail(user.getEmail())
+                .filter(existingUser -> !existingUser.getId().equals(user.getId()))
+                .ifPresent(existingUser -> {
+                    throw new IllegalArgumentException("Email is already in use");
+                });
+    }
+
+    private void validateCpfAndEmailForNewUser(User user) {
+        if (userRepository.existsByCpf(user.getCpf())) {
+            throw new IllegalArgumentException("CPF is already in use.");
+        }
+
+        if (userRepository.existsByEmail(user.getEmail())) {
+            throw new IllegalArgumentException("Email is already in use");
         }
     }
 }
