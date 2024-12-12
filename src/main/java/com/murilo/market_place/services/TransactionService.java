@@ -12,9 +12,11 @@ import com.murilo.market_place.exception.NullInsertValueException;
 import com.murilo.market_place.mapper.ItemTransactionMapper;
 import com.murilo.market_place.repositories.ITransactionRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
@@ -31,6 +33,7 @@ public class TransactionService {
     private final UserService userService;
     private final ProductService productService;
 
+    @Transactional(rollbackFor = Exception.class)
     public Transaction create(TransactionRequestDTO requestDTO) {
         User user = userService.findById(requestDTO.getUserId());
 
@@ -60,11 +63,14 @@ public class TransactionService {
         return transactionRepository.save(transaction);
     }
 
+    @Transactional(readOnly = true)
     public Page<Transaction> findAll(UUID userId, Pageable pageable) {
         userService.existsUser(userId);
         return transactionRepository.findByUserId(userId, pageable);
     }
 
+    @Transactional(readOnly = true)
+    @Cacheable(value = "transactionCache", key = "#transactionId")
     public Transaction findById(UUID transactionId) {
         return this.findTransaction(transactionId);
     }

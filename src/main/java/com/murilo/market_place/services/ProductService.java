@@ -9,6 +9,9 @@ import com.murilo.market_place.mapper.ProductMapper;
 import com.murilo.market_place.repositories.IProductRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.CachePut;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
@@ -48,14 +51,16 @@ public class ProductService {
     }
 
     @Transactional(rollbackFor = Exception.class)
+    @CachePut(value = "productCache", key = "#productRequestDTO.id")
     public Product updateProduct(ProductRequestDTO productRequestDTO) {
         Product product = findProduct(productRequestDTO.getId());
 
-        updateProduct(productRequestDTO, product);
+        updateProductFields(productRequestDTO, product);
         return productRepository.save(product);
     }
 
     @Transactional(readOnly = true)
+    @Cacheable(value = "productCache", key = "#productId")
     public Product findById(UUID productId) {
         return findProduct(productId);
     }
@@ -66,6 +71,7 @@ public class ProductService {
     }
 
     @Transactional(rollbackFor = Exception.class)
+    @CacheEvict(value = "productCache", key = "#productId")
     public void deleteById(UUID productId) {
         if (productId != null) {
             existsProduct(productId);
@@ -97,7 +103,7 @@ public class ProductService {
         }
     }
 
-    private void updateProduct(ProductRequestDTO dto, Product product) {
+    private void updateProductFields(ProductRequestDTO dto, Product product) {
         Product productUpdated = ProductMapper.toUpdatedProduct(dto, product);
         //TODO implement the deletion of the old image on S3 in the future, if a new image is inserted
         dto.getThumb().ifPresent(file -> productUpdated.setThumb(uploadImg(file)));

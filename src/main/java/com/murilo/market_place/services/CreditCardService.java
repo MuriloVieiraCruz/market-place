@@ -7,7 +7,10 @@ import com.murilo.market_place.exception.NullInsertValueException;
 import com.murilo.market_place.mapper.CreditCardMapper;
 import com.murilo.market_place.repositories.ICreditCardRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.Objects;
@@ -20,6 +23,7 @@ public class CreditCardService {
     private final ICreditCardRepository creditCardRepository;
     private final UserService userService;
 
+    @Transactional(rollbackFor = Exception.class)
     public CreditCard create(CreditCardRequestDTO creditCardRequestDTO) {
         CreditCard creditCard = CreditCardMapper.toCreditCard(creditCardRequestDTO);
 
@@ -31,6 +35,7 @@ public class CreditCardService {
         return creditCardRepository.save(creditCard);
     }
 
+    @Transactional(readOnly = true)
     public List<CreditCard> findAllCardsByUser(UUID userId) {
         if (Objects.isNull(userId)) {
             throw new NullInsertValueException("ID is required for product search");
@@ -39,10 +44,15 @@ public class CreditCardService {
         return creditCardRepository.findAllByUserId(userId);
     }
 
+
+    @Transactional(readOnly = true)
+    @Cacheable(value = "cardCache", key = "#cardId")
     public CreditCard findById(UUID cardId) {
         return findCard(cardId);
     }
 
+    @Transactional(rollbackFor = Exception.class)
+    @CacheEvict(value = "cardCache", key = "#cardId")
     public void deleteById(UUID cardId) {
         if (cardId != null) {
             existsCreditCard(cardId);
@@ -60,6 +70,7 @@ public class CreditCardService {
         return creditCardRepository.findById(cardId).orElseThrow(() -> new EntityNotFoundException(CreditCard.class));
     }
 
+    @Transactional(readOnly = true)
     private void existsCreditCard(UUID creditCardId) {
         if (creditCardId != null) {
             boolean exist = creditCardRepository.existsById(creditCardId);
